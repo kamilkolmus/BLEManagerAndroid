@@ -5,6 +5,7 @@
     android:orientation="vertical" >
 
     <ListView
+
         android:id="@android:id/list"
 
         android:layout_height="wrap_content"

@@ -18,7 +18,6 @@ package com.i7xaphe.blemanager
 
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.content.*
@@ -32,7 +31,6 @@ import android.view.*
 import android.widget.*
 
 import java.util.ArrayList
-import java.util.HashMap
 
 /**
  * For a given BLE device, this Activity provides the user interface to connect, display data,
@@ -42,7 +40,6 @@ import java.util.HashMap
  */
 class FragmentBleServices : Fragment() {
     private var tvConnectionState: TextView? = null
-    private var tvData: TextView? = null
     private var deviceName: String? = null
     private var deviceAddress: String? = null
     private var elvGattServicesList: ExpandableListView? = null
@@ -117,7 +114,7 @@ class FragmentBleServices : Fragment() {
 
     private fun clearUI() {
         elvGattServicesList!!.setAdapter(null as SimpleExpandableListAdapter?)
-        tvData!!.setText(R.string.no_data)
+
     }
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -135,12 +132,10 @@ class FragmentBleServices : Fragment() {
         Log.i(TAG,"deviceName: "+deviceName)
         Log.i(TAG,"deviceName: "+deviceAddress)
         // Sets up UI references.
-
-         v.findViewById<TextView>(R.id.device_address).text=deviceAddress
+        tvConnectionState = v.findViewById<TextView>(R.id.tv_connection_state)
         elvGattServicesList = v.findViewById<ExpandableListView>(R.id.gatt_services_list)
         elvGattServicesList!!.setOnChildClickListener(servicesListClickListner)
-        tvConnectionState = v.findViewById(R.id.connection_state)
-        tvData = v.findViewById(R.id.data_value)
+
 
 
         var floatingactionbutton=v.findViewById<FloatingActionButton>(R.id.floatingactionbutton)
@@ -190,7 +185,7 @@ class FragmentBleServices : Fragment() {
 
     private fun displayData(data: String?) {
 
-        tvData!!.text = data
+
     }
 
     // Demonstrates how to iterate through the supported GATT Services/Characteristics.
@@ -219,7 +214,7 @@ class FragmentBleServices : Fragment() {
     internal class ViewHolderChild {
         var charName: TextView? = null
         var charUUID: TextView? = null
-        var button: TextView? = null
+        var charProperties: TextView? = null
     }
 
 
@@ -261,6 +256,7 @@ class FragmentBleServices : Fragment() {
             return false
         }
 
+        @SuppressLint("SetTextI18n")
         override fun getGroupView(i: Int, p1: Boolean, view: View?, p3: ViewGroup?): View {
             var view = view
             val viewHolder: FragmentBleServices.ViewHolder
@@ -274,8 +270,8 @@ class FragmentBleServices : Fragment() {
             } else {
                 viewHolder = view.tag as FragmentBleServices.ViewHolder
             }
-            viewHolder.serviceName!!.text=UUIDConverter().getServiceName(mLeServices.get(i).uuid.toString())
-            viewHolder.serviceUUID!!.text="UUID: "+mLeServices.get(i).uuid.toString().substring(4,8)
+            viewHolder.serviceName!!.text=BLEConverter.getServiceName(mLeServices.get(i).uuid.toString())
+            viewHolder.serviceUUID!!.text="UUID: "+BLEConverter.UIIDFilter(mLeServices.get(i).uuid.toString())
             viewHolder.serviceType!!.text= if(mLeServices.get(i).type==0) getString(R.string.primary_srvice) else getString(R.string.secondary_service);
 
 
@@ -284,6 +280,7 @@ class FragmentBleServices : Fragment() {
 
 
 
+        @SuppressLint("SetTextI18n")
         override fun getChildView(groupPos: Int, childPos: Int, p2: Boolean, view: View?, p4: ViewGroup?): View {
 
             var view = view
@@ -293,14 +290,14 @@ class FragmentBleServices : Fragment() {
                 viewHolderChild = FragmentBleServices.ViewHolderChild()
                 viewHolderChild.charName = view!!.findViewById(R.id.tv_characteristic_name)
                 viewHolderChild.charUUID = view.findViewById(R.id.tv_characteristic_uuid)
-                viewHolderChild.button = view.findViewById(R.id.buttonx)
+                viewHolderChild.charProperties = view.findViewById(R.id.tv_characteristic_properties)
                 view.tag = viewHolderChild
             } else {
                 viewHolderChild = view.tag as FragmentBleServices.ViewHolderChild
             }
-            viewHolderChild.charName!!.text=UUIDConverter().getCharateristicName(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())
-            viewHolderChild.charUUID!!.text="UUID: "+mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString().substring(4,8)
-
+            viewHolderChild.charName!!.text=BLEConverter.getCharateristicName(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())
+            viewHolderChild.charUUID!!.text="UUID: "+BLEConverter.UIIDFilter(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())
+            viewHolderChild.charProperties!!.text=BLEConverter.getProperties(mLeCharacteristic!!.get(groupPos).get(childPos).properties)
             return view
 
         }

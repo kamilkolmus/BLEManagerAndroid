@@ -31,9 +31,7 @@ class FragmentBleDevices : ListFragment() {
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
        var v=inflater!!.inflate(R.layout.fragment_ble_devices, container, false)
 
-
         mHandler = Handler()
-
 
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
@@ -57,15 +55,6 @@ class FragmentBleDevices : ListFragment() {
 
         Log.i("onCreate","onCreate")
         return v
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-    }
-
-    override fun onSaveInstanceState(outState: Bundle?) {
-        super.onSaveInstanceState(outState)
     }
 
      override fun onListItemClick(l: ListView, v: View, position: Int, id: Long) {
@@ -178,11 +167,7 @@ class FragmentBleDevices : ListFragment() {
 
 
     companion object {
-
-        private val REQUEST_ENABLE_BT = 1
-        // Stops scanning after 10 seconds.
         private val SCAN_PERIOD: Long = 6000
-        private val PERMISSION_REQUEST_COARSE_LOCATION = 1
     }
 }
 

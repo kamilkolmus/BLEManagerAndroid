@@ -15,19 +15,24 @@
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
-                 android:background="#e3e6ea"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:paddingLeft="5dp">
+    <android.support.v4.widget.Space
+        android:layout_width="match_parent"
+        android:layout_height="3dp" />
     <TextView android:id="@+id/device_name"
+        android:background="#f3f4f7"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="18dp"/>
     <TextView android:id="@+id/device_address"
+        android:background="#f3f4f7"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="12dp"/>
     <TextView android:id="@+id/device_rssi"
+        android:background="#f3f4f7"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="14dp"/>

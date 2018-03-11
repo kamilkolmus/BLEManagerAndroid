@@ -14,18 +14,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import kotlinx.android.synthetic.main.app_bar_main.*
 import java.util.ArrayList
 
 
 class FragmentBleDevices : ListFragment() {
 
     private var mBluetoothAdapter: BluetoothAdapter? = null
-    private var mScanning: Boolean = false
     private var mHandler: Handler? = null
-
-    private var bleDevices= mutableListOf<BluetoothDevice>()
-
     private var mLeDeviceListAdapter: LeDeviceListAdapter? = null
+    var isScanning=false
 
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -47,12 +45,9 @@ class FragmentBleDevices : ListFragment() {
 
         mLeDeviceListAdapter = LeDeviceListAdapter()
         listAdapter = mLeDeviceListAdapter
-        bleDevices.clear()
+
         mLeDeviceListAdapter!!.clear()
         scanLeDevice(true)
-
-        scanLeDevice(true)
-
         Log.i("onCreate","onCreate")
         return v
     }
@@ -60,25 +55,32 @@ class FragmentBleDevices : ListFragment() {
      override fun onListItemClick(l: ListView, v: View, position: Int, id: Long) {
 
         super.onListItemClick(l, v, position, id)
-
+        scanLeDevice(false)
          val device = mLeDeviceListAdapter!!.getDevice(position)
-
+         //calling a function in MainActivity to add a new fragmentBleService to pagerView
         (activity as MainActivity).addNewTab(device!!.name,device!!.address)
     }
 
     fun scanLeDevice(enable: Boolean) {
         if (enable) {
+            //Update  text in toolbar textView
+            isScanning=true
+            (activity as MainActivity).overwriteToolbarTextView(0,getString(R.string.stop))
             // Stops scanning after a pre-defined scan period.
             mHandler!!.postDelayed({
-                mScanning = false
                 mBluetoothAdapter!!.stopLeScan(mLeScanCallback)
-
+                //Update  text in toolbar textView
+                isScanning=false
+                (activity as MainActivity).overwriteToolbarTextView(0,getString(R.string.scan))
             }, SCAN_PERIOD)
 
-            mScanning = true
             mBluetoothAdapter!!.startLeScan(mLeScanCallback)
         } else {
-            mScanning = false
+            isScanning=false
+            ///Update  text in toolbar textView
+            (activity as MainActivity).overwriteToolbarTextView(0,getString(R.string.scan))
+            //cancel  mHandler.postDelayed
+            mHandler!!.removeCallbacksAndMessages(null)
             mBluetoothAdapter!!.stopLeScan(mLeScanCallback)
         }
 
@@ -90,6 +92,12 @@ class FragmentBleDevices : ListFragment() {
                 mLeDeviceListAdapter!!.addDevice(device,rssi)
                 mLeDeviceListAdapter!!.notifyDataSetChanged()
         }
+    }
+
+    fun clearLeDevices(){
+        mLeDeviceListAdapter!!.clear()
+        mLeDeviceListAdapter!!.notifyDataSetChanged()
+
     }
 
     internal class ViewHolder {

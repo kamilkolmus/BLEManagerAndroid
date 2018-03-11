@@ -21,7 +21,6 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.*
 import android.widget.Toast
-import com.astuetz.PagerSlidingTabStrip
 
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.*
@@ -42,19 +41,82 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
 
-
         adapter = MyPagerAdapter(supportFragmentManager)
-
         mpager!!.offscreenPageLimit = 30
         mpager!!.adapter=adapter;
-
-
-
         val pageMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4f, resources
                 .displayMetrics).toInt()
         mpager!!.pageMargin = pageMargin
         mtabs!!.setViewPager(mpager)
 
+        //add addOnPageChangeListener to viewpager that holds all fragments
+        mpager?.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+
+            override fun onPageScrollStateChanged(state: Int) {
+            }
+
+            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+
+            }
+            override fun onPageSelected(position: Int) {
+                println("PAGER"+position)
+                when(mpager.currentItem){
+                    //and update toolbar TextView to SCAN
+                    //Scanner is always stopped after changing tab
+                    0->toolbar_textview.text=getString(R.string.scan)
+
+                    //read state of current FragmentService and update toolbarTextView textField
+                    else-> if((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected){
+                        toolbar_textview.text=getString(R.string.disconnect)
+                    }else{
+                        toolbar_textview.text=getString(R.string.connect)
+                    }
+                }
+            }
+
+        })
+
+        toolbar_textview.setOnClickListener(View.OnClickListener {
+            //mpager.currentItem==0 means that FragmentBleDevice is displayed in ViewPager
+            //mpager.currentItem>=1 means that FragmentBleService is displayed in ViewPager
+            if(mpager.currentItem==0){
+                //for currentItem=0 set action to FragmentDevices Object {start or stop scanning}
+                if((adapter!!.getItem(0)as FragmentBleDevices).isScanning){
+                    //stop scanning BLE devices
+                    (adapter!!.getItem(0)as FragmentBleDevices).scanLeDevice(false)
+                }else{
+                    //start scanning ble devices
+                    (adapter!!.getItem(0)as FragmentBleDevices).clearLeDevices()
+                    (adapter!!.getItem(0)as FragmentBleDevices).scanLeDevice(true)
+                }
+
+
+            }else{
+                //check connection with the BLE device
+                if( (adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected){
+
+                    //NOTHING TO DO WHEN DEVICES ARE TRYING TO CONNECT
+                    if(!toolbar_textview.text.equals(R.string.connectiong)){
+                        //disconnect with the device
+                        (adapter!!.getItem(mpager.currentItem)as FragmentBleServices).disconnect()
+                        //davice is disconnected so change toolbarTextView to CONNECT
+                        toolbar_textview.text=getString(R.string.connect)
+
+                    }
+
+                }else{
+                    //NOTHING TO DO WHEN DEVICES ARE TRYING TO CONNECT
+                    if(!toolbar_textview.text.equals(R.string.connectiong)){
+                        //connect to device
+                        (adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connect()
+                        //device is disconnected so change toolbarTextView to CONNECTING
+                        //After the connection, the text will be changed using the function overwriteToolbarTextView() in MainActivity
+                        toolbar_textview.text=getString(R.string.connectiong)
+                    }
+
+                }
+            }
+        })
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -94,6 +156,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
     }
+
 
     override fun onRequestPermissionsResult(requestCode: Int,
                                             permissions: Array<String>,
@@ -156,10 +219,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
     fun addNewTab(name:String,address:String){
 
-        val bundle = Bundle()
-        bundle.putString(FragmentBleServices.EXTRAS_DEVICE_NAME, name)
-        bundle.putString(FragmentBleServices.EXTRAS_DEVICE_ADDRESS, address)
-
         adapter!!.addFragment(name,address)
 
     }
@@ -186,6 +245,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val bundle = Bundle()
             bundle.putString(FragmentBleServices.EXTRAS_DEVICE_NAME, name)
             bundle.putString(FragmentBleServices.EXTRAS_DEVICE_ADDRESS, address)
+            bundle.putInt(FragmentBleServices.EXTRAS_TAB_INDEX, fragments.size)
             fragment!!.arguments=bundle
 
             titles.add(name)
@@ -205,8 +265,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
     }
+    //function to overwrite text i toolbarTextView
+    //this function will be called from fragments (FragmentBleDevice and FragmentBleService)
+    fun overwriteToolbarTextView(pagePosition:Int,text:String){
+        if(pagePosition==mpager.currentItem){
+            toolbar_textview.text=text
+        }
+    }
 
     companion object {
         private val PERMISSION_REQUEST_COARSE_LOCATION = 1
     }
 }
+
+

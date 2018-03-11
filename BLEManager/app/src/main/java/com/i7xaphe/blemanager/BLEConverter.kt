@@ -2,6 +2,13 @@ package com.i7xaphe.blemanager
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattCharacteristic.*
+import android.content.Context
+import android.graphics.Typeface
+import android.os.Build
+import android.support.annotation.RequiresApi
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 
 /**
  * Created by Kamil on 2018-03-04.
@@ -41,6 +48,89 @@ object BLEConverter {
     }
 
 
+
+    fun getPropertiesView(properties: Int, context: Context): MutableList<TextView> {
+
+
+        val list: MutableList<TextView> = mutableListOf()
+        var lparams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT)
+        lparams.setMargins(12,0,0,0)
+
+
+
+        if (PROPERTY_BROADCAST and properties != 0) {
+
+            list.add(TextView(context))
+            list.last().text  = "BROADCAST"
+            list.last().typeface= Typeface.DEFAULT_BOLD
+            list.last().layoutParams= lparams
+            list.last().isClickable=true
+        }
+        if (PROPERTY_READ and properties != 0) {
+
+            list.add(TextView(context))
+            list.last().text  = "READ"
+            list.last().typeface= Typeface.DEFAULT_BOLD
+            list.last().layoutParams= lparams
+            list.last().isClickable=true
+        }
+        if (PROPERTY_WRITE_NO_RESPONSE and properties != 0) {
+
+            list.add(TextView(context))
+            list.last().text = "WRITE NO RESPONSE"
+            list.last().typeface= Typeface.DEFAULT_BOLD
+            list.last().layoutParams= lparams
+            list.last().isClickable=true
+        }
+        if (PROPERTY_WRITE and properties != 0) {
+
+            list.add(TextView(context))
+            list.last().text  = "WRITE"
+            list.last().typeface= Typeface.DEFAULT_BOLD
+            list.last().layoutParams= lparams
+            list.last().isClickable=true
+
+        }
+        if (PROPERTY_NOTIFY and properties != 0) {
+
+            list.add(TextView(context))
+            list.last().text  = "NOTIFY"
+            list.last().typeface= Typeface.DEFAULT_BOLD
+            list.last().layoutParams= lparams
+            list.last().isClickable=true
+
+        }
+        if (PROPERTY_INDICATE and properties != 0) {
+
+            list.add(TextView(context))
+            list.last().text = "INDICATE"
+            list.last().typeface= Typeface.DEFAULT_BOLD
+            list.last().layoutParams= lparams
+            list.last().isClickable=true
+        }
+        if (PROPERTY_SIGNED_WRITE and properties != 0) {
+
+            list.add(TextView(context))
+            list.last().text  = "SIGNED WRITE"
+            list.last().typeface= Typeface.DEFAULT_BOLD
+            list.last().layoutParams= lparams
+            list.last().isClickable=true
+        }
+        if (PROPERTY_EXTENDED_PROPS and properties != 0) {
+
+            list.add(TextView(context))
+            list.last().text  = "EXTENDED PROPS"
+            list.last().typeface= Typeface.DEFAULT_BOLD
+            list.last().layoutParams= lparams
+            list.last().isClickable=true
+        }
+
+        return list
+
+    }
+
+
     fun getProperties(properties: Int): String {
 
         var s = " "
@@ -60,13 +150,13 @@ object BLEConverter {
             s += ("WRITE ")
 
         if (PROPERTY_NOTIFY and properties != 0)
-            s.plus("NOTIFY ")
+            s+=("NOTIFY ")
 
         if (PROPERTY_INDICATE and properties != 0)
             s += ("INDICATE ")
 
         if (PROPERTY_SIGNED_WRITE and properties != 0)
-            s.plus("SIGNED_WRITE ")
+            s+=("SIGNED_WRITE ")
 
         if (PROPERTY_EXTENDED_PROPS and properties != 0)
 

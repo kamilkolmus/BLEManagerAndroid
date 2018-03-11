@@ -18,6 +18,7 @@ package com.i7xaphe.blemanager
 
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.content.*
@@ -25,12 +26,17 @@ import android.os.Bundle
 import android.os.IBinder
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
+import android.support.design.widget.TextInputEditText
 import android.support.v4.app.Fragment
 import android.util.Log
 import android.view.*
+import android.view.animation.AnimationUtils
 import android.widget.*
 
 import java.util.ArrayList
+import android.view.LayoutInflater
+import kotlinx.android.synthetic.main.app_bar_main.*
+
 
 /**
  * For a given BLE device, this Activity provides the user interface to connect, display data,
@@ -39,17 +45,17 @@ import java.util.ArrayList
  * Bluetooth LE API.
  */
 class FragmentBleServices : Fragment() {
-    private var tvConnectionState: TextView? = null
+
     private var deviceName: String? = null
     private var deviceAddress: String? = null
+    private var tabIndex: Int? = null
     private var elvGattServicesList: ExpandableListView? = null
     private var serviceBle: ServiceBle? = null
+    var connected = false
 
-    private var connected = false
-    private var bluetoothGattCharacteristic: BluetoothGattCharacteristic? = null
+    var expanderListAdapter:ExpandableListAdapter?=null
 
-    private val LIST_NAME = "NAME"
-    private val LIST_UUID = "UUID"
+
 
 
     // Code to manage Service lifecycle.
@@ -58,15 +64,17 @@ class FragmentBleServices : Fragment() {
         override fun onServiceConnected(componentName: ComponentName, service: IBinder) {
             serviceBle = (service as ServiceBle.LocalBinder).serviceBle
             if (!serviceBle!!.initialize()) {
+
                 Log.e(TAG, "Unable to initialize Bluetooth")
                 return
             }
-            // Automatically connects to the device upon successful start-up initialization.
-            if(serviceBle!!.connect(deviceAddress)){
-                Log.e(TAG, "Connected to BLE Device")
-            }else{
-                Log.e(TAG, "Unable connect to BLE Device")
-            }
+
+//            // Automatically connects to the device upon successful start-up initialization.
+//            if (serviceBle!!.connect(deviceAddress)) {
+//                Log.e(TAG, "Connected to BLE Device")
+//            } else {
+//                Log.e(TAG, "Unable connect to BLE Device")
+//            }
         }
 
         override fun onServiceDisconnected(componentName: ComponentName) {
@@ -83,19 +91,30 @@ class FragmentBleServices : Fragment() {
     private val mGattUpdateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
-            if (ServiceBle.ACTION_GATT_CONNECTED == action) {
-                connected = true
-                updateConnectionState(R.string.connected)
-            } else if (ServiceBle.ACTION_GATT_DISCONNECTED == action) {
-                connected = false
-                updateConnectionState(R.string.disconnected)
-                clearUI()
-            } else if (ServiceBle.ACTION_GATT_SERVICES_DISCOVERED == action) {
-                // Show all the supported services and characteristics on the user interface.
-                displayGattServices(serviceBle!!.supportedGattServices)
-            } else if (ServiceBle.ACTION_DATA_AVAILABLE == action) {
-                displayData(intent.getStringExtra(ServiceBle.EXTRA_DATA))
-            }
+            Log.i(TAG, "BroadcastReceiver onReceive")
+            println("intent.action=  "+intent.action)
+
+                if (ServiceBle.ACTION_GATT_CONNECTED == action) {
+                    connected = true
+                    //next onClickAction for toolbartextView ill be disconnect
+                    updateToolbarAction(R.string.disconnect)
+                } else if (ServiceBle.ACTION_GATT_DISCONNECTED == action) {
+                    connected = false
+                    //next onClickAction for toolbartextView ill be connect
+                    updateToolbarAction(R.string.connect)
+                    clearUI()
+                } else if (ServiceBle.ACTION_GATT_SERVICES_DISCOVERED == action) {
+                    // Show all the supported services and characteristics on the user interface.
+                    displayGattServices(serviceBle!!.supportedGattServices)
+                } else if (ServiceBle.ACTION_DATA_AVAILABLE == action) {
+                    Log.i(TAG, "ACTION_DATA_AVAILABLE onReceive")
+
+                    displayData(intent.getStringExtra(ServiceBle.EXTRA_DATA),
+                            intent.getIntExtra(ServiceBle.GROUP_POS,0),
+                            intent.getIntExtra(ServiceBle.CHILD_POS,0))
+                }
+
+
         }
     }
 
@@ -106,10 +125,10 @@ class FragmentBleServices : Fragment() {
     private val servicesListClickListner = ExpandableListView.OnChildClickListener { parent, v, groupPosition, childPosition, id ->
 
 
-        Log.d(TAG,"servicesListClickListner $groupPosition $childPosition "+v.id)
+        Log.d(TAG, "servicesListClickListner $groupPosition $childPosition " + v.id)
 
         return@OnChildClickListener true
-       //false
+        //false
     }
 
     private fun clearUI() {
@@ -117,39 +136,36 @@ class FragmentBleServices : Fragment() {
 
     }
 
+
+
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        var v=inflater!!.inflate(R.layout.fragment_ble_services, container, false)
+        var v = inflater!!.inflate(R.layout.fragment_ble_services, container, false)
         retainInstance = false
         val bundle = this.arguments
         if (bundle != null) {
-            deviceName = bundle!!.getString(EXTRAS_DEVICE_NAME)
-            deviceAddress = bundle!!.getString(EXTRAS_DEVICE_ADDRESS)
+            deviceName = bundle.getString(EXTRAS_DEVICE_NAME)
+            deviceAddress = bundle.getString(EXTRAS_DEVICE_ADDRESS)
+            tabIndex = bundle.getInt(EXTRAS_TAB_INDEX)
         }
 
-
-
-
-        Log.i(TAG,"deviceName: "+deviceName)
-        Log.i(TAG,"deviceName: "+deviceAddress)
         // Sets up UI references.
-        tvConnectionState = v.findViewById<TextView>(R.id.tv_connection_state)
         elvGattServicesList = v.findViewById<ExpandableListView>(R.id.gatt_services_list)
-        elvGattServicesList!!.setOnChildClickListener(servicesListClickListner)
+        var floatingactionbutton = v.findViewById<FloatingActionButton>(R.id.floatingactionbutton)
 
 
-
-        var floatingactionbutton=v.findViewById<FloatingActionButton>(R.id.floatingactionbutton)
-
+        //add OnClick Listener to floatingactionbutton
         floatingactionbutton.setOnClickListener { view ->
             Snackbar.make(view, "Graphical data visualization will be added soon", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
         }
 
+        //Bind service
         val gattServiceIntent = Intent(context, ServiceBle::class.java)
-        if(activity.bindService(gattServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE)){
-            Log.i(TAG,"ble service ok")
-        }else{
-            Log.i(TAG,"ble service error")
+        gattServiceIntent.action=tabIndex.toString()
+        if (activity.bindService(gattServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE)) {
+            Log.i(TAG, "ble service ok")
+        } else {
+            Log.i(TAG, "ble service error")
         }
         return v
     }
@@ -158,12 +174,20 @@ class FragmentBleServices : Fragment() {
         super.onResume()
         activity.registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter())
         if (serviceBle != null) {
-            val result = serviceBle!!.connect(deviceAddress)
+            val result = connect()
             Log.d(TAG, "Connect request result=" + result)
-        }else{
-
-            Log.d(TAG, "serviceBle null")
         }
+    }
+    //function  to connect to ble device
+    //can be use externally  by activity
+    fun connect():Boolean{
+        return serviceBle!!.connect(deviceAddress)
+    }
+
+    //function  to disconnect to ble device
+    //can be use externally by activity
+    fun disconnect(){
+         serviceBle!!.disconnect()
     }
 
     override fun onPause() {
@@ -178,14 +202,16 @@ class FragmentBleServices : Fragment() {
     }
 
 
-
-    private fun updateConnectionState(resourceId: Int) {
-        tvConnectionState!!.setText(resourceId)
+    private fun updateToolbarAction(resourceId: Int) {
+        (activity as MainActivity).overwriteToolbarTextView(tabIndex!!,getString(resourceId))
     }
 
-    private fun displayData(data: String?) {
+    private fun displayData(data: String?,groupPos: Int,childPos: Int) {
 
-
+        Log.i(TAG, "displayData $data $groupPos $childPos")
+        (expanderListAdapter as MyExpanderListAdapter).valueTextViewList!!.get(groupPos).get(childPos).visibility=View.VISIBLE
+        (expanderListAdapter as MyExpanderListAdapter).valueTextViewList!!.get(groupPos).get(childPos).text=data
+       // elvGattServicesList!!.no
     }
 
     // Demonstrates how to iterate through the supported GATT Services/Characteristics.
@@ -193,39 +219,48 @@ class FragmentBleServices : Fragment() {
     // on the UI.
     private fun displayGattServices(gattServices: List<BluetoothGattService>?) {
 
-        var gattCharacteristic: ArrayList<List<BluetoothGattCharacteristic>>?=ArrayList()
+        var gattCharacteristic: ArrayList<List<BluetoothGattCharacteristic>>? = ArrayList()
 
         // Loops through available GATT Services.
         for (gattService in gattServices!!) {
             gattCharacteristic!!.add(gattService.characteristics)
         }
 
-       var expanderListAdapter=ExpanderListAdapter(context,gattServices,gattCharacteristic)
+        expanderListAdapter = MyExpanderListAdapter(context, gattServices, gattCharacteristic)
         elvGattServicesList!!.setAdapter(expanderListAdapter)
         elvGattServicesList!!.setOnChildClickListener(servicesListClickListner)
+       //elvGattServicesList!!.deferNotifyDataSetChanged()
     }
 
-    internal class ViewHolder {
+    //View holder for GroupView in MyExpanderListAdapter
+    internal class GroupViewHolder {
         var serviceName: TextView? = null
         var serviceUUID: TextView? = null
         var serviceType: TextView? = null
     }
 
-    internal class ViewHolderChild {
+
+    //View holder for ChildView in MyExpanderListAdapter
+    internal class ChildViewHolder {
         var charName: TextView? = null
         var charUUID: TextView? = null
-        var charProperties: TextView? = null
+        //propertiesLinearlayout holds dynamically added clickable TextViews
+        var propertiesLinearlayout: LinearLayout? = null
+        var charValue:TextView?=null
     }
 
 
-    private inner class ExpanderListAdapter(context: Context,
-                                            mLeServices:List<BluetoothGattService>,
-                                            mLeCharacteristic: ArrayList<List<BluetoothGattCharacteristic>>?) : BaseExpandableListAdapter() {
 
-        private var context:Context=context
-        private val mLeServices= mLeServices
-        private val mLeCharacteristic=mLeCharacteristic
+    private inner class MyExpanderListAdapter(context: Context,
+                                              mLeServices: List<BluetoothGattService>,
+                                              mLeCharacteristic: ArrayList<List<BluetoothGattCharacteristic>>?) : BaseExpandableListAdapter() {
+
+        private var context: Context = context
+        private val mLeServices = mLeServices
+        private val mLeCharacteristic = mLeCharacteristic
         private val mInflator: LayoutInflater = this@FragmentBleServices.layoutInflater
+        var valueTextViewList:ArrayList<ArrayList<TextView>>?= ArrayList()
+
 
         override fun getGroupCount(): Int {
             return mLeServices.size
@@ -240,7 +275,7 @@ class FragmentBleServices : Fragment() {
         }
 
         override fun getChild(groupPos: Int, childPos: Int): Any {
-            return  mLeCharacteristic!!.get(groupPos).get(childPos)
+            return mLeCharacteristic!!.get(groupPos).get(childPos)
         }
 
         override fun getGroupId(id: Int): Long {
@@ -257,76 +292,137 @@ class FragmentBleServices : Fragment() {
         }
 
         @SuppressLint("SetTextI18n")
-        override fun getGroupView(i: Int, p1: Boolean, view: View?, p3: ViewGroup?): View {
+        override fun getGroupView(groupPos: Int, p1: Boolean, view: View?, p3: ViewGroup?): View {
             var view = view
-            val viewHolder: FragmentBleServices.ViewHolder
+            val groupViewHolder: FragmentBleServices.GroupViewHolder
             if (view == null) {
                 view = mInflator.inflate(R.layout.expandedlistitem, null)
-                viewHolder = FragmentBleServices.ViewHolder()
-                viewHolder.serviceName = view!!.findViewById(R.id.tv_service_name)
-                viewHolder.serviceUUID = view.findViewById(R.id.tv_service_uuid)
-                viewHolder.serviceType = view.findViewById(R.id.tv_service_type)
-                view.tag = viewHolder
+                groupViewHolder = FragmentBleServices.GroupViewHolder()
+                groupViewHolder.serviceName = view!!.findViewById(R.id.tv_service_name)
+                groupViewHolder.serviceUUID = view.findViewById(R.id.tv_service_uuid)
+                groupViewHolder.serviceType = view.findViewById(R.id.tv_service_type)
+                view.tag = groupViewHolder
             } else {
-                viewHolder = view.tag as FragmentBleServices.ViewHolder
+                groupViewHolder = view.tag as FragmentBleServices.GroupViewHolder
             }
-            viewHolder.serviceName!!.text=BLEConverter.getServiceName(mLeServices.get(i).uuid.toString())
-            viewHolder.serviceUUID!!.text="UUID: "+BLEConverter.UIIDFilter(mLeServices.get(i).uuid.toString())
-            viewHolder.serviceType!!.text= if(mLeServices.get(i).type==0) getString(R.string.primary_srvice) else getString(R.string.secondary_service);
+            groupViewHolder.serviceName!!.text = BLEConverter.getServiceName(mLeServices.get(groupPos).uuid.toString())
+            groupViewHolder.serviceUUID!!.text = "UUID: " + BLEConverter.UIIDFilter(mLeServices.get(groupPos).uuid.toString())
+            groupViewHolder.serviceType!!.text = if (mLeServices.get(groupPos).type == 0) getString(R.string.primary_srvice) else getString(R.string.secondary_service);
+            if(valueTextViewList!!.size<=groupPos){
+                valueTextViewList!!.add(groupPos,ArrayList())
+            }
 
 
             return view
         }
-
 
 
         @SuppressLint("SetTextI18n")
         override fun getChildView(groupPos: Int, childPos: Int, p2: Boolean, view: View?, p4: ViewGroup?): View {
 
-            var view = view
-            val viewHolderChild: FragmentBleServices.ViewHolderChild
-            if (view == null) {
-                view = mInflator.inflate(R.layout.expandedlistitemchild, null)
-                viewHolderChild = FragmentBleServices.ViewHolderChild()
-                viewHolderChild.charName = view!!.findViewById(R.id.tv_characteristic_name)
-                viewHolderChild.charUUID = view.findViewById(R.id.tv_characteristic_uuid)
-                viewHolderChild.charProperties = view.findViewById(R.id.tv_characteristic_properties)
-                view.tag = viewHolderChild
-            } else {
-                viewHolderChild = view.tag as FragmentBleServices.ViewHolderChild
-            }
-            viewHolderChild.charName!!.text=BLEConverter.getCharateristicName(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())
-            viewHolderChild.charUUID!!.text="UUID: "+BLEConverter.UIIDFilter(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())
-            viewHolderChild.charProperties!!.text=BLEConverter.getProperties(mLeCharacteristic!!.get(groupPos).get(childPos).properties)
-            return view
 
+            println("getChildView $groupPos $childPos")
+
+                var childViewHolder: FragmentBleServices.ChildViewHolder = FragmentBleServices.ChildViewHolder()
+
+                var v = mInflator.inflate(R.layout.expandedlistitemchild, null)
+                childViewHolder.charName = v!!.findViewById(R.id.tv_characteristic_name)
+                childViewHolder.charUUID = v.findViewById(R.id.tv_characteristic_uuid)
+                childViewHolder.propertiesLinearlayout = v.findViewById(R.id.ll_properties)
+                if(valueTextViewList!!.get(groupPos).size<=childPos){
+                    valueTextViewList!!.get(groupPos).add(childPos, v.findViewById(R.id.tv_characteristic_value))
+                }else{
+                    var lastVlue= valueTextViewList!!.get(groupPos).get(childPos).text
+                    var visibility= valueTextViewList!!.get(groupPos).get(childPos).visibility
+                    valueTextViewList!!.get(groupPos).set(childPos, v.findViewById(R.id.tv_characteristic_value))
+                    valueTextViewList!!.get(groupPos).get(childPos).text=lastVlue
+                    valueTextViewList!!.get(groupPos).get(childPos).visibility=visibility
+                }
+                childViewHolder.charValue= valueTextViewList!!.get(groupPos).get(childPos)
+                for (tv in BLEConverter.getPropertiesView(mLeCharacteristic!!.get(groupPos).get(childPos).properties, context)) {
+                    childViewHolder.propertiesLinearlayout!!.addView(tv)
+                    tv.setOnClickListener(View.OnClickListener { textview ->
+                        textview.startAnimation(AnimationUtils.loadAnimation(context, R.anim.propery_click))
+                        Log.i("clicked", tv.text.toString() + groupPos + childPos)
+                        val property=tv.text.toString()
+                        when(property){
+                            "BROADCAST"->{Toast.makeText(context,"PROPERTY NOT IMPLEMENTED YET",Toast.LENGTH_SHORT).show()}
+                            "READ"->{
+                           //     lastPropertyClicked=childViewHolder.charValue
+                                serviceBle!!.readCharacteristic(mLeCharacteristic!!.get(groupPos).get(childPos),groupPos,childPos)
+
+                            }
+                            "WRITE NO RESPONSE"->{Toast.makeText(context,"PROPERTY NOT IMPLEMENTED YET",Toast.LENGTH_SHORT).show()}
+                            "WRITE"->{
+                                Toast.makeText(context,"PROPERTY NOT IMPLEMENTED YET",Toast.LENGTH_SHORT).show()
+                                val inflater = layoutInflater
+                                val dialoglayout = inflater.inflate(R.layout.alert_write_property, null)
+                                val builder = AlertDialog.Builder(context)
+                                var data = dialoglayout.findViewById<TextInputEditText>(R.id.tiet_data)
+
+                                builder.setView(dialoglayout)
+                                builder.setNegativeButton("Cancel",object :DialogInterface.OnClickListener{
+                                    override fun onClick(dialog: DialogInterface?, witch: Int) {
+                                        dialog!!.dismiss()
+                                    }
+
+                                })
+                                builder.setPositiveButton("Send",object :DialogInterface.OnClickListener{
+                                    override fun onClick(dialog: DialogInterface?, witch: Int) {
+                                        serviceBle!!.writeCharacteristic(mLeCharacteristic!!.get(groupPos).get(childPos),data.text.toString(),groupPos,childPos)
+                                        dialog!!.dismiss()
+                                    }
+
+                                })
+                                builder.show()
+
+
+                            }
+                            "NOTIFY"->{Toast.makeText(context,"PROPERTY NOT IMPLEMENTED YET",Toast.LENGTH_SHORT).show()}
+                            "INDICATE"->{Toast.makeText(context,"PROPERTY NOT IMPLEMENTED YET",Toast.LENGTH_SHORT).show()}
+                            "SIGNED WRITE"->{Toast.makeText(context,"PROPERTY NOT IMPLEMENTED YET",Toast.LENGTH_SHORT).show()}
+                            "EXTENDED PROPS"->{Toast.makeText(context,"PROPERTY NOT IMPLEMENTED YET",Toast.LENGTH_SHORT).show()}
+                            else->{Toast.makeText(context,"WRONG PROPERTY",Toast.LENGTH_SHORT).show()}
+
+                        }
+                    })
+                }
+                childViewHolder.charName!!.text = BLEConverter.getCharateristicName(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())
+                childViewHolder.charUUID!!.text = "UUID: " + BLEConverter.UIIDFilter(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())
+
+                return v
         }
-
         override fun isChildSelectable(p0: Int, p1: Int): Boolean {
             return true
         }
-
-
     }
+
+    private fun makeGattUpdateIntentFilter(): IntentFilter {
+        val intentFilter = IntentFilter()
+
+        intentFilter.addAction(ServiceBle.ACTION_GATT_CONNECTED)
+        intentFilter.addAction(ServiceBle.ACTION_GATT_DISCONNECTED)
+        intentFilter.addAction(ServiceBle.ACTION_GATT_SERVICES_DISCOVERED)
+        intentFilter.addAction(ServiceBle.ACTION_DATA_AVAILABLE)
+
+        return intentFilter
+    }
+
+
+
 
 
 
     companion object {
         private val TAG = FragmentBleServices::class.java!!.getSimpleName()
+        @JvmField
+        var EXTRAS_DEVICE_NAME = "DEVICE_NAME"
+        @JvmField
+        var EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS"
+        @JvmField
+        var EXTRAS_TAB_INDEX = "TAB_INDEX"
 
 
-       @JvmField var EXTRAS_DEVICE_NAME = "DEVICE_NAME"
-       @JvmField var EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS"
 
-        private fun makeGattUpdateIntentFilter(): IntentFilter {
-            val intentFilter = IntentFilter()
-            intentFilter.addAction(ServiceBle.ACTION_GATT_CONNECTED)
-            intentFilter.addAction(ServiceBle.ACTION_GATT_DISCONNECTED)
-            intentFilter.addAction(ServiceBle.ACTION_GATT_SERVICES_DISCOVERED)
-            intentFilter.addAction(ServiceBle.ACTION_DATA_AVAILABLE)
-            return intentFilter
-        }
     }
-
-
 }

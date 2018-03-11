@@ -32,6 +32,13 @@
     <string name="primary_srvice">PRIMARY SERVICE</string>
     <string name="secondary_service">SECONDARY SERVICE</string>
     <string name="properties">Properties:</string>
+    <string name="value">VALUE:</string>
+    <string name="data_to_send">Data</string>
+    <string name="scan">SCAN</string>
+    <string name="stop">STOP</string>
+    <string name="connect">CONNECT</string>
+    <string name="disconnect">DISCONNECT</string>
+    <string name="connectiong">CONNECTING</string>
 
 
 </resources>

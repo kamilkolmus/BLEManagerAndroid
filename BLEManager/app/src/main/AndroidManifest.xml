@@ -30,7 +30,10 @@
             </intent-filter>
 
         </activity>
-        <service android:name=".ServiceBle" android:enabled="true"/>
+        <service android:name=".ServiceBle" android:enabled="true"
+
+        />
+
     </application>
 
 </manifest>

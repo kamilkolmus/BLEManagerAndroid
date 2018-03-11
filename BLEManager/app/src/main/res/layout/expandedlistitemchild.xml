@@ -58,16 +58,17 @@
             android:textAlignment="viewStart"
             android:text="@string/properties"
             />
-        <TextView
-            android:id="@+id/tv_characteristic_properties"
-            android:layout_width="wrap_content"
+        <LinearLayout
+
+            android:gravity="left"
+
+            android:layout_width="match_parent"
+            android:id="@+id/ll_properties"
             android:layout_height="wrap_content"
-            android:layout_below="@android:id/text1"
-            android:layout_alignStart="@android:id/text1"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textAlignment="viewStart"
-            android:text="@string/properties"
-            />
+            android:orientation="horizontal">
+
+        </LinearLayout>
+
 
     </LinearLayout>
 
@@ -76,83 +77,20 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-
-        <ImageButton
-            android:id="@+id/ib_read"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_margin="10dp"
+        <TextView
+            android:id="@+id/tv_characteristic_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@android:id/text1"
+            android:layout_alignStart="@android:id/text1"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textAlignment="viewStart"
+            android:text="@string/value"
             android:visibility="gone"
-
-            app:srcCompat="@android:drawable/ic_menu_manage" />
-
-
-        <ImageButton
-            android:id="@+id/ib_write"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_margin="10dp"
-            android:visibility="gone"
-
-            app:srcCompat="@android:drawable/ic_menu_manage"  />
-
-        <ImageButton
-            android:id="@+id/ib_notify"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_margin="10dp"
-            android:visibility="gone"
-
-            app:srcCompat="@android:drawable/ic_menu_manage" />
-
-        <ImageButton
-            android:id="@+id/ib_indicate"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_margin="10dp"
-            android:visibility="gone"
-
-            app:srcCompat="@android:drawable/ic_menu_manage" />
-
-        <ImageButton
-            android:id="@+id/ib_write_no_resp"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_margin="10dp"
-            android:visibility="gone"
-            app:srcCompat="@android:drawable/ic_menu_manage" />
-
-        <ImageButton
-            android:id="@+id/ib_broadcast"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_margin="10dp"
-            android:visibility="gone"
-
-            app:srcCompat="@android:drawable/ic_menu_manage" />
-
-        <ImageButton
-            android:id="@+id/ib_signed_write"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_margin="10dp"
-            android:visibility="gone"
-
-            app:srcCompat="@android:drawable/ic_menu_manage" />
-
-        <ImageButton
-            android:id="@+id/ib_extended_props"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_margin="10dp"
-            android:visibility="gone"
-
-            app:srcCompat="@android:drawable/ic_menu_manage" />
-
-
-
+            />
 
     </LinearLayout>
+
 
 
 

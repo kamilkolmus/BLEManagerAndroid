@@ -24,51 +24,41 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.*
 import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 
-/**
- * Service for managing connection and data communication with a GATT server hosted on a
- * given Bluetooth LE device.
- */
+
 class ServiceBle : Service() {
 
 
     private val TAG = ServiceBle::class.java.simpleName
 
-    private val STATE_DISCONNECTED = 0
-    private val STATE_CONNECTING = 1
-    private val STATE_CONNECTED = 2
 
-
+    var mListBleDevices: HashMap<Int,BleDevice> = HashMap()
     private var bluetoothManager: BluetoothManager? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
-    private var bluetoothDeviceAddress: String? = null
-    private var bluetoothGatt: BluetoothGatt? = null
-    private var connectionState = STATE_DISCONNECTED
     private val mBinder = LocalBinder()
 
-    private var groupPos=0
-    private var childPos=0
 
-
-    private fun broadcastUpdate(action: String) {
+    private fun broadcastUpdate(deviceID: Int,action: String) {
         val intent = Intent(action)
-        Log.w(TAG, "broadcastConnectionChangeState "+action)
+        intent.putExtra(DEVICE_ID,deviceID)
         sendBroadcast(intent)
     }
 
-    private fun broadcastUpdate(action: String,
-                                characteristic: BluetoothGattCharacteristic,groupPos: Int,childPos: Int) {
+    private fun broadcastUpdate(deviceID: Int,action: String,
+                                characteristic: BluetoothGattCharacteristic,pair: Pair<Int,Int>) {
         val intent = Intent(action)
 
         val data = characteristic.value
+        intent.putExtra(DEVICE_ID,deviceID)
         intent.putExtra(EXTRA_DATA, String(data))
-        intent.putExtra(GROUP_POS,groupPos)
-        intent.putExtra(CHILD_POS,childPos)
+        intent.putExtra(SERVICE_INDEX,pair.first)
+        intent.putExtra(CHARATERISTIC_INDEX,pair.second)
         sendBroadcast(intent)
         Log.w(TAG, "broadcastUpdate")
     }
@@ -94,17 +84,10 @@ class ServiceBle : Service() {
     //called only once when service is created
     override fun onCreate() {
         super.onCreate()
+        //initialize ble adapter
         initialize()
 
     }
-
-    //called after all bindService method
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return super.onStartCommand(intent, flags, startId)
-
-
-    }
-
 
     /**
      * Initializes a reference to the local Bluetooth adapter.
@@ -142,36 +125,42 @@ class ServiceBle : Service() {
      * *         `BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)`
      * *         callback.
      */
-    fun connect(address: String?): Boolean {
+    fun connect(address: String?,deviceID:Int): Boolean {
 
-        val device = bluetoothAdapter!!.getRemoteDevice(address)
-        if (device == null) {
+        mListBleDevices.put(deviceID,BleDevice(deviceID,bluetoothAdapter!!.getRemoteDevice(address)))
+      //  mListBleDevices.get(deviceID).deviceID=deviceID
+
+        if ( mListBleDevices.get(deviceID)!!.device == null) {
             Log.w(TAG, "Device not found.  Unable to connect.")
             return false
         }
-        
-        bluetoothGatt = device.connectGatt(this, false, object : BluetoothGattCallback() {
+
+        mListBleDevices.get(deviceID)!!.bluetoothGatt =  mListBleDevices!!.get(deviceID)!!.device.connectGatt(this, false, object : BluetoothGattCallback() {
+
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-                val intentAction: String
+
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    intentAction = ACTION_GATT_CONNECTED
-                    connectionState = STATE_CONNECTED
-                    broadcastUpdate(intentAction)
+                     ACTION_GATT_CONNECTED
+                    mListBleDevices!!.get(deviceID)!!.connectionState =STATE_CONNECTED
+                    broadcastUpdate(deviceID,ACTION_GATT_CONNECTED)
                     Log.i(TAG, "Connected to GATT server.")
                     // Attempts to discover services after successful connection.
-                    Log.i(TAG, "Attempting to start serviceBle discovery:" + bluetoothGatt!!.discoverServices())
+                    Log.i(TAG, "Attempting to start serviceBle discovery:" +  mListBleDevices!!.get(deviceID)!!.bluetoothGatt!!.discoverServices())
 
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    intentAction = ACTION_GATT_DISCONNECTED
-                    connectionState = STATE_DISCONNECTED
+
+                   mListBleDevices!!.get(deviceID)!!.connectionState  = STATE_DISCONNECTED
                     Log.i(TAG, "Disconnected from GATT server.")
-                    broadcastUpdate(intentAction)
+                    broadcastUpdate(deviceID,ACTION_GATT_DISCONNECTED)
                 }
             }
 
             override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED)
+                    mListBleDevices!!.get(deviceID)!!.updateSetvices()
+
+                    broadcastUpdate(deviceID,ACTION_GATT_SERVICES_DISCOVERED)
                 } else {
                     Log.w(TAG, "onServicesDiscovered received: " + status)
                 }
@@ -181,14 +170,14 @@ class ServiceBle : Service() {
                                               characteristic: BluetoothGattCharacteristic,
                                               status: Int) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic,groupPos,childPos)
+                    broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic, mListBleDevices!!.get(deviceID)!!.getCharateristicIndex(characteristic))
                     Log.w(TAG, "onCharacteristicRead")
                 }
             }
 
             override fun onCharacteristicChanged(gatt: BluetoothGatt,
                                                  characteristic: BluetoothGattCharacteristic) {
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic,groupPos,childPos)
+                broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic,mListBleDevices!!.get(deviceID)!!.getCharateristicIndex(characteristic))
                 Log.w(TAG, "onCharacteristicRead")
 
 
@@ -199,15 +188,15 @@ class ServiceBle : Service() {
             override fun onCharacteristicWrite(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?, status: Int) {
                 super.onCharacteristicWrite(gatt, characteristic, status)
 
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic!!,groupPos,childPos)
+                broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic!!,mListBleDevices!!.get(deviceID)!!.getCharateristicIndex(characteristic))
                 Log.w(TAG, "onCharacteristicRead")
 
             }
 
         })
         Log.d(TAG, "Trying to create a new connection.")
-        bluetoothDeviceAddress = address
-        connectionState = STATE_CONNECTING
+   //     bluetoothDeviceAddress = address
+        mListBleDevices!!.get(deviceID)!!.connectionState = STATE_CONNECTING
         return true
     }
 
@@ -217,12 +206,12 @@ class ServiceBle : Service() {
      * `BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)`
      * callback.
      */
-    fun disconnect() {
-        if (bluetoothAdapter == null || bluetoothGatt == null) {
+    fun disconnect(deviceID:Int) {
+        if (bluetoothAdapter == null || mListBleDevices.get(deviceID)!!.bluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
-        bluetoothGatt!!.disconnect()
+        mListBleDevices.get(deviceID)!!.bluetoothGatt!!.disconnect()
     }
 
     /**
@@ -230,11 +219,14 @@ class ServiceBle : Service() {
      * released properly.
      */
     fun close() {
-        if (bluetoothGatt == null) {
-            return
+        for(i in 0 until mListBleDevices.size){
+            if (mListBleDevices.get(i)!!.bluetoothGatt == null) {
+                return
+            }else{
+                mListBleDevices.get(i)!!.bluetoothGatt !!.close()
+                mListBleDevices.get(i)!!.bluetoothGatt  = null
+            }
         }
-        bluetoothGatt!!.close()
-        bluetoothGatt = null
     }
 
     /**
@@ -244,27 +236,24 @@ class ServiceBle : Service() {
 
      * @param characteristic The characteristic to read from.
      */
-    fun readCharacteristic(characteristic: BluetoothGattCharacteristic,groupPos:Int,childPos:Int) {
-        if (bluetoothAdapter == null || bluetoothGatt == null) {
+    fun readCharacteristic(serviceIndex:Int,charateristicIndex:Int,deviceID:Int) {
+        if (bluetoothAdapter == null ||mListBleDevices.get(deviceID)!!.bluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
         Log.w(TAG, "TRYING to read characteristic")
-        this.groupPos=groupPos;
-        this.childPos=childPos
 
-        bluetoothGatt!!.readCharacteristic(characteristic)
+        mListBleDevices!!.get(deviceID)!!.bluetoothGatt!!.readCharacteristic(mListBleDevices!!.get(deviceID)!!.getCharateristic(serviceIndex,charateristicIndex))
     }
 
-    fun writeCharacteristic(charateristic: BluetoothGattCharacteristic,data:String, groupPos: Int, childPos: Int) {
-        if (bluetoothAdapter == null || bluetoothGatt == null) {
+    fun writeCharacteristic(serviceIndex:Int,charateristicIndex:Int,deviceID:Int,data:String) {
+        if (bluetoothAdapter == null || mListBleDevices.get(deviceID)!!.bluetoothGatt  == null) {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
-        charateristic.value=data.toByteArray()
-        this.groupPos=groupPos;
-        this.childPos=childPos
-        bluetoothGatt!!.writeCharacteristic(charateristic)
+        val charateristic=mListBleDevices!!.get(deviceID)!!.getCharateristic(serviceIndex,charateristicIndex)
+        charateristic!!.value=data.toByteArray()
+        mListBleDevices!!.get(deviceID)!!.bluetoothGatt!!.writeCharacteristic(charateristic)
     }
 
     /**
@@ -274,18 +263,18 @@ class ServiceBle : Service() {
      * *
      * @param enabled If true, enable notification.  False otherwise.
      */
-    fun setCharacteristicNotification(characteristic: BluetoothGattCharacteristic,
-                                      enabled: Boolean) {
-        if (bluetoothAdapter == null || bluetoothGatt == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized")
-            return
-        }
-        bluetoothGatt!!.setCharacteristicNotification(characteristic, enabled)
-
-        Log.i(TAG,characteristic.properties.toString())
-
-
-    }
+//    fun setCharacteristicNotification(characteristic: BluetoothGattCharacteristic,
+//                                      enabled: Boolean) {
+//        if (bluetoothAdapter == null || bluetoothGatt == null) {
+//            Log.w(TAG, "BluetoothAdapter not initialized")
+//            return
+//        }
+//        bluetoothGatt!!.setCharacteristicNotification(characteristic, enabled)
+//
+//        Log.i(TAG,characteristic.properties.toString())
+//
+//
+//    }
 
     /**
      * Retrieves a list of supported GATT services on the connected device. This should be
@@ -293,18 +282,22 @@ class ServiceBle : Service() {
 
      * @return A `List` of supported services.
      */
-    val supportedGattServices: List<BluetoothGattService>?
-        get() {
-            if (bluetoothGatt == null) return null
+//    val supportedGattServices: List<BluetoothGattService>?
+//        get() {
+//            if (bluetoothGatt == null) return null
+//
+//            return bluetoothGatt!!.services
+//        }
 
-            return bluetoothGatt!!.services
-        }
-
+    fun getBluetoothDevice(deviceId:Int): BleDevice{
+        return mListBleDevices.get(deviceId)!!
+    }
 
     companion object {
         val EXTRA_DATA = "com.example.bluetooth.le.EXTRA_DATA"
-        val GROUP_POS = "com.example.bluetooth.le.GROUP_POS"
-        val CHILD_POS = "com.example.bluetooth.le.CHILD_POS"
+        val SERVICE_INDEX = "com.example.bluetooth.le.SERVICE_INDEX"
+        val CHARATERISTIC_INDEX = "com.example.bluetooth.le.CHARATERISTIC_INDEX"
+        val DEVICE_ID = "com.example.bluetooth.le.DEVICE_ID"
         val ACTION_GATT_CONNECTED = "com.example.bluetooth.le.ACTION_GATT_CONNECTED"
         val ACTION_GATT_DISCONNECTED = "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED"
         val ACTION_GATT_SERVICES_DISCOVERED = "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED"

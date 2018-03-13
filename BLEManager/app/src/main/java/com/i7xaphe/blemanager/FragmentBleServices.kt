@@ -35,20 +35,14 @@ import android.widget.*
 
 import java.util.ArrayList
 import android.view.LayoutInflater
-import kotlinx.android.synthetic.main.app_bar_main.*
 
 
-/**
- * For a given BLE device, this Activity provides the user interface to connect, display data,
- * and display GATT services and characteristics supported by the device.  The Activity
- * communicates with `ServiceBle`, which in turn interacts with the
- * Bluetooth LE API.
- */
 class FragmentBleServices : Fragment() {
 
     private var deviceName: String? = null
     private var deviceAddress: String? = null
     private var tabIndex: Int? = null
+    private var bleDeviceIndex: Int? = null
     private var elvGattServicesList: ExpandableListView? = null
     private var serviceBle: ServiceBle? = null
     var connected = false
@@ -94,6 +88,7 @@ class FragmentBleServices : Fragment() {
             Log.i(TAG, "BroadcastReceiver onReceive")
             println("intent.action=  "+intent.action)
 
+            if(intent.getIntExtra(ServiceBle.DEVICE_ID,-1)==bleDeviceIndex) {
                 if (ServiceBle.ACTION_GATT_CONNECTED == action) {
                     connected = true
                     //next onClickAction for toolbartextView ill be disconnect
@@ -105,15 +100,15 @@ class FragmentBleServices : Fragment() {
                     clearUI()
                 } else if (ServiceBle.ACTION_GATT_SERVICES_DISCOVERED == action) {
                     // Show all the supported services and characteristics on the user interface.
-                    displayGattServices(serviceBle!!.supportedGattServices)
+                    displayGattServices(serviceBle!!.getBluetoothDevice(bleDeviceIndex!!))
                 } else if (ServiceBle.ACTION_DATA_AVAILABLE == action) {
                     Log.i(TAG, "ACTION_DATA_AVAILABLE onReceive")
 
                     displayData(intent.getStringExtra(ServiceBle.EXTRA_DATA),
-                            intent.getIntExtra(ServiceBle.GROUP_POS,0),
-                            intent.getIntExtra(ServiceBle.CHILD_POS,0))
+                            intent.getIntExtra(ServiceBle.SERVICE_INDEX, 0),
+                            intent.getIntExtra(ServiceBle.CHARATERISTIC_INDEX, 0))
                 }
-
+            }
 
         }
     }
@@ -138,6 +133,7 @@ class FragmentBleServices : Fragment() {
 
 
 
+
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         var v = inflater!!.inflate(R.layout.fragment_ble_services, container, false)
         retainInstance = false
@@ -146,6 +142,7 @@ class FragmentBleServices : Fragment() {
             deviceName = bundle.getString(EXTRAS_DEVICE_NAME)
             deviceAddress = bundle.getString(EXTRAS_DEVICE_ADDRESS)
             tabIndex = bundle.getInt(EXTRAS_TAB_INDEX)
+            bleDeviceIndex= tabIndex!! -1
         }
 
         // Sets up UI references.
@@ -181,13 +178,13 @@ class FragmentBleServices : Fragment() {
     //function  to connect to ble device
     //can be use externally  by activity
     fun connect():Boolean{
-        return serviceBle!!.connect(deviceAddress)
+        return serviceBle!!.connect(deviceAddress,bleDeviceIndex!!)
     }
 
     //function  to disconnect to ble device
     //can be use externally by activity
     fun disconnect(){
-         serviceBle!!.disconnect()
+         serviceBle!!.disconnect(bleDeviceIndex!!)
     }
 
     override fun onPause() {
@@ -217,19 +214,10 @@ class FragmentBleServices : Fragment() {
     // Demonstrates how to iterate through the supported GATT Services/Characteristics.
     // In this sample, we populate the data structure that is bound to the ExpandableListView
     // on the UI.
-    private fun displayGattServices(gattServices: List<BluetoothGattService>?) {
-
-        var gattCharacteristic: ArrayList<List<BluetoothGattCharacteristic>>? = ArrayList()
-
-        // Loops through available GATT Services.
-        for (gattService in gattServices!!) {
-            gattCharacteristic!!.add(gattService.characteristics)
-        }
-
-        expanderListAdapter = MyExpanderListAdapter(context, gattServices, gattCharacteristic)
+    private fun displayGattServices(bleDevice: BleDevice) {
+        expanderListAdapter = MyExpanderListAdapter(context, serviceBle!!.mListBleDevices.get(bleDeviceIndex!!)!!.mListServices!!,  serviceBle!!.mListBleDevices.get(bleDeviceIndex!!)!!.mListCharacteristic!!)
         elvGattServicesList!!.setAdapter(expanderListAdapter)
         elvGattServicesList!!.setOnChildClickListener(servicesListClickListner)
-       //elvGattServicesList!!.deferNotifyDataSetChanged()
     }
 
     //View holder for GroupView in MyExpanderListAdapter
@@ -253,7 +241,7 @@ class FragmentBleServices : Fragment() {
 
     private inner class MyExpanderListAdapter(context: Context,
                                               mLeServices: List<BluetoothGattService>,
-                                              mLeCharacteristic: ArrayList<List<BluetoothGattCharacteristic>>?) : BaseExpandableListAdapter() {
+                                              mLeCharacteristic: ArrayList<List<BluetoothGattCharacteristic>>) : BaseExpandableListAdapter() {
 
         private var context: Context = context
         private val mLeServices = mLeServices
@@ -349,7 +337,7 @@ class FragmentBleServices : Fragment() {
                             "BROADCAST"->{Toast.makeText(context,"PROPERTY NOT IMPLEMENTED YET",Toast.LENGTH_SHORT).show()}
                             "READ"->{
                            //     lastPropertyClicked=childViewHolder.charValue
-                                serviceBle!!.readCharacteristic(mLeCharacteristic!!.get(groupPos).get(childPos),groupPos,childPos)
+                                serviceBle!!.readCharacteristic(groupPos,childPos,bleDeviceIndex!!)
 
                             }
                             "WRITE NO RESPONSE"->{Toast.makeText(context,"PROPERTY NOT IMPLEMENTED YET",Toast.LENGTH_SHORT).show()}
@@ -369,7 +357,7 @@ class FragmentBleServices : Fragment() {
                                 })
                                 builder.setPositiveButton("Send",object :DialogInterface.OnClickListener{
                                     override fun onClick(dialog: DialogInterface?, witch: Int) {
-                                        serviceBle!!.writeCharacteristic(mLeCharacteristic!!.get(groupPos).get(childPos),data.text.toString(),groupPos,childPos)
+                                        serviceBle!!.writeCharacteristic(groupPos,childPos,bleDeviceIndex!!,data.text.toString())
                                         dialog!!.dismiss()
                                     }
 

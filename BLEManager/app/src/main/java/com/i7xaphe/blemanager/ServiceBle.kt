@@ -21,7 +21,6 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.*
@@ -56,7 +55,7 @@ class ServiceBle : Service() {
 
         val data = characteristic.value
         intent.putExtra(DEVICE_ID,deviceID)
-        intent.putExtra(EXTRA_DATA, String(data))
+        intent.putExtra(CHARATERISTIC_DATA, String(data))
         intent.putExtra(SERVICE_INDEX,pair.first)
         intent.putExtra(CHARATERISTIC_INDEX,pair.second)
         sendBroadcast(intent)
@@ -76,7 +75,7 @@ class ServiceBle : Service() {
         // After using a given device, you should make sure that BluetoothGatt.close() is called
         // such that resources are cleaned up properly.  In this particular example, close() is
         // invoked when the UI is disconnected from the Service.
-        close()
+      //  close()
         return super.onUnbind(intent)
     }
 
@@ -118,7 +117,7 @@ class ServiceBle : Service() {
      * Connects to the GATT server hosted on the Bluetooth LE device.
 
      * @param address The device address of the destination device.
-     * *
+     * @param deviceID device index in mListBleDevices.
      * *
      * @return Return true if the connection is initiated successfully. The connection result
      * *         is reported asynchronously through the
@@ -135,13 +134,14 @@ class ServiceBle : Service() {
             return false
         }
 
+        broadcastUpdate(deviceID,ACTION_GATT_CONNECTING)
+
         mListBleDevices.get(deviceID)!!.bluetoothGatt =  mListBleDevices!!.get(deviceID)!!.device.connectGatt(this, false, object : BluetoothGattCallback() {
 
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
 
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-                     ACTION_GATT_CONNECTED
-                    mListBleDevices!!.get(deviceID)!!.connectionState =STATE_CONNECTED
+
                     broadcastUpdate(deviceID,ACTION_GATT_CONNECTED)
                     Log.i(TAG, "Connected to GATT server.")
                     // Attempts to discover services after successful connection.
@@ -149,7 +149,7 @@ class ServiceBle : Service() {
 
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
 
-                   mListBleDevices!!.get(deviceID)!!.connectionState  = STATE_DISCONNECTED
+               //    mListBleDevices!!.get(deviceID)!!.connectionState  = STATE_DISCONNECTED
                     Log.i(TAG, "Disconnected from GATT server.")
                     broadcastUpdate(deviceID,ACTION_GATT_DISCONNECTED)
                 }
@@ -196,7 +196,7 @@ class ServiceBle : Service() {
         })
         Log.d(TAG, "Trying to create a new connection.")
    //     bluetoothDeviceAddress = address
-        mListBleDevices!!.get(deviceID)!!.connectionState = STATE_CONNECTING
+
         return true
     }
 
@@ -212,31 +212,34 @@ class ServiceBle : Service() {
             return
         }
         mListBleDevices.get(deviceID)!!.bluetoothGatt!!.disconnect()
+        broadcastUpdate(deviceID,ACTION_GATT_DISCONNECTING)
     }
 
     /**
      * After using a given BLE device, the app must call this method to ensure resources are
      * released properly.
      */
-    fun close() {
+    fun close(deviceID:Int) {
         for(i in 0 until mListBleDevices.size){
             if (mListBleDevices.get(i)!!.bluetoothGatt == null) {
                 return
             }else{
                 mListBleDevices.get(i)!!.bluetoothGatt !!.close()
                 mListBleDevices.get(i)!!.bluetoothGatt  = null
+          //      mListBleDevices.remove(deviceID)
             }
         }
     }
 
     /**
-     * Request a read on a given `BluetoothGattCharacteristic`. The read result is reported
-     * asynchronously through the `BluetoothGattCallback#onCharacteristicRead(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)`
-     * callback.
+     * Request a read on a given `BluetoothGattCharacteristic`.
+     *
+     * @param deviceID device index in mListBleDevices
+     * @param serviceIndex The service index.
+     * @param charateristicIndex The characteristic index.
 
-     * @param characteristic The characteristic to read from.
      */
-    fun readCharacteristic(serviceIndex:Int,charateristicIndex:Int,deviceID:Int) {
+    fun readCharacteristic(deviceID:Int,serviceIndex:Int,charateristicIndex:Int) {
         if (bluetoothAdapter == null ||mListBleDevices.get(deviceID)!!.bluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
@@ -246,7 +249,17 @@ class ServiceBle : Service() {
         mListBleDevices!!.get(deviceID)!!.bluetoothGatt!!.readCharacteristic(mListBleDevices!!.get(deviceID)!!.getCharateristic(serviceIndex,charateristicIndex))
     }
 
-    fun writeCharacteristic(serviceIndex:Int,charateristicIndex:Int,deviceID:Int,data:String) {
+    /**
+     * Request a write on a given `BluetoothGattCharacteristic`.
+     *
+     * @param deviceID device index in mListBleDevices
+     * @param serviceIndex  service index.
+     * @param charateristicIndex  characteristic index.
+     * @param data data to write.
+
+     */
+
+    fun writeCharacteristic(deviceID:Int,serviceIndex:Int,charateristicIndex:Int,data:String) {
         if (bluetoothAdapter == null || mListBleDevices.get(deviceID)!!.bluetoothGatt  == null) {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
@@ -259,48 +272,40 @@ class ServiceBle : Service() {
     /**
      * Enables or disables notification on a give characteristic.
 
-     * @param characteristic Characteristic to act on.
-     * *
+     * @param deviceID device index in mListBleDevices
+     * @param serviceIndex  service index.
+     * @param charateristicIndex  characteristic index.
      * @param enabled If true, enable notification.  False otherwise.
      */
-//    fun setCharacteristicNotification(characteristic: BluetoothGattCharacteristic,
-//                                      enabled: Boolean) {
-//        if (bluetoothAdapter == null || bluetoothGatt == null) {
-//            Log.w(TAG, "BluetoothAdapter not initialized")
-//            return
-//        }
-//        bluetoothGatt!!.setCharacteristicNotification(characteristic, enabled)
-//
+    fun setCharacteristicNotification(deviceID: Int,serviceIndex:Int,charateristicIndex:Int,
+                                      enabled: Boolean) {
+        if (bluetoothAdapter == null || mListBleDevices.get(deviceID)!!.bluetoothGatt == null) {
+            Log.w(TAG, "BluetoothAdapter not initialized")
+            return
+        }
+        val charateristic=mListBleDevices!!.get(deviceID)!!.getCharateristic(serviceIndex,charateristicIndex)
+        mListBleDevices!!.get(deviceID)!!.bluetoothGatt!!.setCharacteristicNotification(charateristic, enabled)
+
 //        Log.i(TAG,characteristic.properties.toString())
 //
-//
-//    }
+    }
 
-    /**
-     * Retrieves a list of supported GATT services on the connected device. This should be
-     * invoked only after `BluetoothGatt#discoverServices()` completes successfully.
-
-     * @return A `List` of supported services.
-     */
-//    val supportedGattServices: List<BluetoothGattService>?
-//        get() {
-//            if (bluetoothGatt == null) return null
-//
-//            return bluetoothGatt!!.services
-//        }
 
     fun getBluetoothDevice(deviceId:Int): BleDevice{
         return mListBleDevices.get(deviceId)!!
     }
 
     companion object {
-        val EXTRA_DATA = "com.example.bluetooth.le.EXTRA_DATA"
+        val CHARATERISTIC_DATA = "com.example.bluetooth.le.CHARATERISTIC_DATA"
         val SERVICE_INDEX = "com.example.bluetooth.le.SERVICE_INDEX"
         val CHARATERISTIC_INDEX = "com.example.bluetooth.le.CHARATERISTIC_INDEX"
         val DEVICE_ID = "com.example.bluetooth.le.DEVICE_ID"
         val ACTION_GATT_CONNECTED = "com.example.bluetooth.le.ACTION_GATT_CONNECTED"
+        val ACTION_GATT_CONNECTING= "com.example.bluetooth.le.ACTION_GATT_CONNECTING"
         val ACTION_GATT_DISCONNECTED = "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED"
+        val ACTION_GATT_DISCONNECTING= "com.example.bluetooth.le.ACTION_GATT_DISCONNECTING"
         val ACTION_GATT_SERVICES_DISCOVERED = "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED"
         val ACTION_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE"
+
     }
 }

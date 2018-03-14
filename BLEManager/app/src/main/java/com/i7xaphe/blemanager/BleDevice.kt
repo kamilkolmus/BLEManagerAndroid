@@ -14,8 +14,8 @@ class BleDevice (deviceID:Int,device :BluetoothDevice) {
 
 
     var device=device
-
-     var connectionState = STATE_DISCONNECTED
+    //initial state
+    //var connectionState = STATE_DISCONNECTED
 
     var bluetoothGatt: BluetoothGatt? = null
     //mLeServices holds BleService
@@ -24,6 +24,7 @@ class BleDevice (deviceID:Int,device :BluetoothDevice) {
     //mLeServices holds BleCharacteristic
     var mListCharacteristic: ArrayList<List<BluetoothGattCharacteristic>> = ArrayList()
 
+    //return characteristic index
     fun getCharateristicIndex(characteristic: BluetoothGattCharacteristic): Pair<Int, Int> {
         var service=characteristic.service
         var serviceIndex=0;
@@ -44,12 +45,12 @@ class BleDevice (deviceID:Int,device :BluetoothDevice) {
 
         return Pair(serviceIndex,charateristicIndex)
     }
-
+    //return characteristic
     fun getCharateristic(serviceIndex: Int, charateristicIndex: Int): BluetoothGattCharacteristic? {
         return mListCharacteristic!!.get(serviceIndex).get(charateristicIndex)
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
-
+    //update mListServices and mListCharacteristic
     fun updateSetvices() {
         mListServices=bluetoothGatt!!.services
         for(service in mListServices!!){

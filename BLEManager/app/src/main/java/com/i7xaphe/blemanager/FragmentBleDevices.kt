@@ -59,6 +59,10 @@ class FragmentBleDevices : ListFragment() {
          val device = mLeDeviceListAdapter!!.getDevice(position)
          //calling a function in MainActivity to add a new fragmentBleService to pagerView
         (activity as MainActivity).addNewTab(device!!.name,device!!.address)
+         mLeDeviceListAdapter!!.removeDevice(position)
+         mLeDeviceListAdapter!!.notifyDataSetChanged()
+
+
     }
 
     fun scanLeDevice(enable: Boolean) {
@@ -124,6 +128,9 @@ class FragmentBleDevices : ListFragment() {
 
         fun getDevice(position: Int): BluetoothDevice? {
             return mLeDevices[position]
+        }
+        fun removeDevice(position: Int) {
+            mLeDevices.removeAt(position)
         }
 
         fun clear() {

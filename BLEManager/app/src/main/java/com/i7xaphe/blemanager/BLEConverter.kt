@@ -49,7 +49,7 @@ object BLEConverter {
 
 
 
-    fun getPropertiesView(properties: Int, context: Context): MutableList<TextView> {
+    fun getPropertiesTextViews(properties: Int, context: Context): MutableList<TextView> {
 
 
         val list: MutableList<TextView> = mutableListOf()

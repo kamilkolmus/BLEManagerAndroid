@@ -39,6 +39,8 @@
     <string name="connect">CONNECT</string>
     <string name="disconnect">DISCONNECT</string>
     <string name="connectiong">CONNECTING</string>
+    <string name="disconnecting">DISCONNECTING</string>
+    <string name="connecting">CONNECTING</string>
 
 
 </resources>

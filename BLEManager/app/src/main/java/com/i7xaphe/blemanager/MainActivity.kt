@@ -2,16 +2,14 @@ package com.i7xaphe.blemanager
 
 import android.Manifest
 import android.app.AlertDialog
+import android.bluetooth.BluetoothProfile.*
 import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.design.widget.NavigationView
-import android.support.v4.app.ActivityCompat
-import android.support.v4.app.Fragment
-import android.support.v4.app.FragmentManager
-import android.support.v4.app.FragmentPagerAdapter
+import android.support.v4.app.*
 import android.support.v4.content.ContextCompat
 import android.support.v4.view.GravityCompat
 import android.support.v4.view.ViewPager
@@ -26,6 +24,9 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.android.synthetic.main.nav_header_main.*
+import android.support.v4.view.PagerAdapter
+
+
 
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -66,10 +67,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     0->toolbar_textview.text=getString(R.string.scan)
 
                     //read state of current FragmentService and update toolbarTextView textField
-                    else-> if((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected){
+                    else-> if((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected==STATE_CONNECTED){
                         toolbar_textview.text=getString(R.string.disconnect)
-                    }else{
+                    }else if ((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected== STATE_DISCONNECTED){
                         toolbar_textview.text=getString(R.string.connect)
+                    }else if((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected== STATE_DISCONNECTING){
+                        Toast.makeText(applicationContext,"Device is disconnecting",Toast.LENGTH_SHORT).show()
+                    } else if((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected== STATE_CONNECTING){
+                        Toast.makeText(applicationContext,"Device is connecting",Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -93,26 +98,26 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             }else{
                 //check connection with the BLE device
-                if( (adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected){
+                if( (adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected== STATE_CONNECTED){
 
                     //NOTHING TO DO WHEN DEVICES ARE TRYING TO CONNECT
                     if(!toolbar_textview.text.equals(R.string.connectiong)){
                         //disconnect with the device
                         (adapter!!.getItem(mpager.currentItem)as FragmentBleServices).disconnect()
                         //davice is disconnected so change toolbarTextView to CONNECT
-                        toolbar_textview.text=getString(R.string.connect)
+                  //      toolbar_textview.text=getString(R.string.connect)
 
                     }
 
-                }else{
+                }else if ((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected== STATE_DISCONNECTED){
                     //NOTHING TO DO WHEN DEVICES ARE TRYING TO CONNECT
-                    if(!toolbar_textview.text.equals(R.string.connectiong)){
+
                         //connect to device
                         (adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connect()
                         //device is disconnected so change toolbarTextView to CONNECTING
                         //After the connection, the text will be changed using the function overwriteToolbarTextView() in MainActivity
-                        toolbar_textview.text=getString(R.string.connectiong)
-                    }
+                 //       toolbar_textview.text=getString(R.string.connectiong)
+
 
                 }
             }
@@ -223,7 +228,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     }
 
-    inner class MyPagerAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
+    inner class MyPagerAdapter(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
         private val fragments = mutableListOf<Fragment>(FragmentBleDevices())
         private val titles = mutableListOf<String>("Devices")
@@ -235,8 +240,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             return fragments.size
         }
 
+//        override fun getItemPosition(`object`: Any?): Int {
+//            return PagerAdapter.POSITION_NONE
+//        }
+
         override fun getItem(position: Int): Fragment {
             return fragments.get(position)
+        }
+
+        override fun destroyItem(container: ViewGroup?, position: Int, `object`: Any?) {
+            super.destroyItem(container, position, `object`)
         }
 
         fun addFragment(name:String,address:String){
@@ -259,9 +272,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         fun removeFragment(position:Int){
             titles.removeAt(position)
             fragments.removeAt(position)
-
             adapter!!.notifyDataSetChanged()
             mtabs!!.notifyDataSetChanged()
+         //   destroyItem(null,position,null)
+
         }
 
     }
@@ -271,6 +285,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if(pagePosition==mpager.currentItem){
             toolbar_textview.text=text
         }
+    }
+
+    fun closeTab(tabId:Int){
+        mpager.currentItem=tabId-1
+        adapter!!.removeFragment(tabId)
+
     }
 
     companion object {

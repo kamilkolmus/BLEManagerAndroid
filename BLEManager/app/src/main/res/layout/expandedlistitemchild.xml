@@ -21,19 +21,39 @@
     android:paddingTop="2dip"
     android:paddingBottom="2dip"
     android:paddingStart="20dip"
-    android:animateLayoutChanges="true"
+    android:animateLayoutChanges="false"
     android:layout_marginStart="16dp"
     android:orientation="vertical">
 
 
-
-    <TextView android:id="@+id/tv_characteristic_name"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dip"
-        android:textAppearance="?android:attr/textAppearanceListItem"
-        android:textAlignment="viewStart"
-        />
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/tv_characteristic_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dip"
+            android:text="Custom Service"
+            android:textAlignment="viewStart"
+            android:textAppearance="?android:attr/textAppearanceListItem"
+            android:layout_weight="1"/>
+        <ImageButton
+            android:layout_weight="0"
+            android:clickable="true"
+            android:id="@+id/ib_graph"
+            android:background="@android:color/transparent"
+            android:layout_marginEnd="10dp"
+            android:scaleType="fitXY"
+            android:layout_marginTop="6dip"
+            android:layout_width="20dp"
+            android:layout_gravity="center_vertical|end"
+            android:layout_height="20dp"
+            android:src="@drawable/graph_icon"/>
+
+    </LinearLayout>
+
 
     <TextView
         android:id="@+id/tv_characteristic_uuid"
@@ -48,7 +68,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:animateLayoutChanges="true"
+        android:animateLayoutChanges="false"
         android:orientation="horizontal">
         <TextView
 
@@ -77,7 +97,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:animateLayoutChanges="true"
+        android:animateLayoutChanges="false"
         android:orientation="horizontal">
 
         <TextView

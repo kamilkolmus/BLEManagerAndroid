@@ -30,6 +30,11 @@
             </intent-filter>
 
         </activity>
+        <activity android:name=".GraphActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            >
+
+        </activity>
         <service android:name=".ServiceBle" android:enabled="true"
 
         />

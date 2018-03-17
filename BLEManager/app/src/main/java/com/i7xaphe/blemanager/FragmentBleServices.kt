@@ -20,12 +20,13 @@ package com.i7xaphe.blemanager
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothProfile.*
 import android.content.*
+import android.graphics.Paint
 import android.os.Bundle
 import android.os.IBinder
-import android.support.design.widget.Snackbar
 import android.support.design.widget.TextInputEditText
 import android.support.v4.app.Fragment
 import android.util.Log
@@ -38,8 +39,7 @@ import android.view.LayoutInflater
 import kotlinx.android.synthetic.main.fragment_ble_services.*
 import com.i7xaphe.blemanager.BLEConverter.UIIDFilter
 import android.widget.RelativeLayout
-import android.widget.RelativeLayout.LayoutParams;
-
+import android.widget.RelativeLayout.LayoutParams
 
 
 class FragmentBleServices : Fragment() {
@@ -47,7 +47,7 @@ class FragmentBleServices : Fragment() {
     private var deviceName: String? = null
     private var deviceAddress: String? = null
     private var tabIndex: Int? = null
-    private var bleDeviceIndex: Int? = null
+    private var deviceID: Int? = null
     //   private var elvGattServicesList: ExpandableListView? = null
     private var serviceBle: ServiceBle? = null
     var connected = STATE_DISCONNECTED
@@ -82,7 +82,7 @@ class FragmentBleServices : Fragment() {
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
             //check if data comes from the device belonging to this fragment
-            if (intent.getIntExtra(ServiceBle.DEVICE_ID, -1) == bleDeviceIndex) {
+            if (intent.getIntExtra(ServiceBle.DEVICE_ID, -1) == deviceID) {
                 if (ServiceBle.ACTION_GATT_CONNECTED == action) {
                     connected = STATE_CONNECTED
                     //next onClickAction for toolbartextView ill be disconnect
@@ -91,7 +91,7 @@ class FragmentBleServices : Fragment() {
                     connected = STATE_CONNECTING
                     //next onClickAction for toolbartextView ill be connect
                     updateToolbarAction(R.string.connecting)
-                }else if (ServiceBle.ACTION_GATT_DISCONNECTED == action) {
+                } else if (ServiceBle.ACTION_GATT_DISCONNECTED == action) {
                     connected = STATE_DISCONNECTED
                     //next onClickAction for toolbartextView ill be connect
                     updateToolbarAction(R.string.connect)
@@ -103,7 +103,7 @@ class FragmentBleServices : Fragment() {
 
                 } else if (ServiceBle.ACTION_GATT_SERVICES_DISCOVERED == action) {
                     // Show all the supported services and characteristics on the user interface.
-                    displayGattServices(serviceBle!!.getBluetoothDevice(bleDeviceIndex!!))
+                    displayGattServices(serviceBle!!.getBluetoothDevice(deviceID!!))
                 } else if (ServiceBle.ACTION_DATA_AVAILABLE == action) {
                     Log.i(TAG, "ACTION_DATA_AVAILABLE onReceive")
 
@@ -137,13 +137,10 @@ class FragmentBleServices : Fragment() {
             deviceName = bundle.getString(EXTRAS_DEVICE_NAME)
             deviceAddress = bundle.getString(EXTRAS_DEVICE_ADDRESS)
             tabIndex = bundle.getInt(EXTRAS_TAB_INDEX)
-            bleDeviceIndex = tabIndex!! - 1
+            deviceID = tabIndex!! - 1
         }
 
-        floatingactionbutton.setOnClickListener { view ->
-            Snackbar.make(view, "Graphical data visualization will be added soon", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show()
-        }
+
 
         val lp = ib_close.getLayoutParams() as LayoutParams
 
@@ -153,11 +150,11 @@ class FragmentBleServices : Fragment() {
             ib_close.startAnimation(AnimationUtils.loadAnimation(context, R.anim.propery_click))
 //            activity.unregisterReceiver(mGattUpdateReceiver)
 //            disconnect()
-//            serviceBle!!.close(bleDeviceIndex!!)
+//            serviceBle!!.close(deviceID!!)
 //
 //            activity.unbindService(mServiceConnection)
 //            (activity as MainActivity).closeTab(tabIndex!!)
-            Log.i("sdsd","sdsdsdsd");
+            Log.i("sdsd", "sdsdsdsd");
         })
 
         //Bind service
@@ -171,49 +168,26 @@ class FragmentBleServices : Fragment() {
 
     }
 
-    //method called when a fragment appears on top or when it hides
-    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
-        super.setUserVisibleHint(isVisibleToUser)
-        if (isVisibleToUser) {
-            if (floatingactionbutton != null) {
-                floatingactionbutton.show()
-            }
-        } else {
-            if (floatingactionbutton != null) {
-                floatingactionbutton.hide()
-            }
-        }
-    }
+
 
     override fun onResume() {
         super.onResume()
         activity.registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter())
+
+       // (activity as MainActivity).sendBroadcast()
 
     }
 
     //function  to connect to ble device
     //can be use externally  by activity
     fun connect(): Boolean {
-        return serviceBle!!.connect(deviceAddress, bleDeviceIndex!!)
+        return serviceBle!!.connect(deviceAddress, deviceID!!)
     }
 
     //function  to disconnect to ble device
     //can be use externally by activity
     fun disconnect() {
-        serviceBle!!.disconnect(bleDeviceIndex!!)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        //unregister BroadcastReceiver
-    //    activity.unregisterReceiver(mGattUpdateReceiver)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-     //   activity.unbindService(mServiceConnection)
-    //    serviceBle = null
+        serviceBle!!.disconnect(deviceID!!)
     }
 
 
@@ -224,10 +198,25 @@ class FragmentBleServices : Fragment() {
     private fun displayData(data: String?, groupPos: Int, childPos: Int) {
 
         Log.i(TAG, "displayData $data $groupPos $childPos")
-        (expanderListAdapter as MyExpanderListAdapter).charValueList!!.get(groupPos).get(childPos).visibility = View.VISIBLE
-        (expanderListAdapter as MyExpanderListAdapter).charValueList!!.get(groupPos).get(childPos).text = data
-        // (expanderListAdapter as MyExpanderListAdapter).getChildView(groupPos,childPos,false,null,null)
-        (expanderListAdapter as MyExpanderListAdapter).notifyDataSetChanged()
+        try {
+            (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos,childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
+            (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos,childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).text = data
+
+            if( (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos,childPos))!!.getTag() ==  R.drawable.graph_icon_strike){
+                var intent = Intent()
+                intent.action=GraphActivity.ACTION_SEND_CHARATERISTIC_VALUE
+                intent.putExtra(GraphActivity.EXTRA_DATA,data)
+                intent.putExtra(GraphActivity.EXTRA_SERVICE_INDEX,groupPos)
+                intent.putExtra(GraphActivity.EXTRA_CHARATERISTIC_INDEX,childPos)
+                intent.putExtra(GraphActivity.EXTRA_DEVICE_ID,deviceID)
+                (activity as MainActivity).sendBroadcast(intent)
+            }
+            // (expanderListAdapter as MyExpanderListAdapter).getChildView(groupPos,childPos,false,null,null)
+            (expanderListAdapter as MyExpanderListAdapter).notifyDataSetChanged()
+        }catch (e:Exception){
+
+        }
+
         // elvGattServicesList!!.no
     }
 
@@ -254,9 +243,13 @@ class FragmentBleServices : Fragment() {
         var charName: TextView? = null
         //charName holds characteristic UIID
         var charUUID: TextView? = null
-        //propertiesLinearlayout holds dynamically added in MyExpanderListAdapter clickable TextViews
+        // propertiesLinearlayout holds dynamically added clickable characteristic properties
         var propertiesLinearlayout: LinearLayout? = null
-        //  var charValue:TextView?=null
+        // tvCharacteristicValue holds characteristic value
+        var tvCharacteristicValue:TextView? = null
+        // tvCharacteristicValue holds characteristic value
+        var ibGraph:ImageButton? = null
+
     }
 
 
@@ -272,7 +265,7 @@ class FragmentBleServices : Fragment() {
         private val mInflator: LayoutInflater = this@FragmentBleServices.layoutInflater
         //charValue holds textViews which store the read values of the characteristic.
         //these values are modified externally by Fragment in mGattUpdateReceiver
-        var charValueList: ArrayList<ArrayList<TextView>> = ArrayList()
+        var childViews: HashMap<Pair<Int, Int>, View> = HashMap()
 
 
         override fun getGroupCount(): Int {
@@ -321,9 +314,6 @@ class FragmentBleServices : Fragment() {
             groupViewHolder.serviceName!!.text = BLEConverter.getServiceName(mLeServices.get(groupPos).uuid.toString())
             groupViewHolder.serviceUUID!!.text = "UUID: " + UIIDFilter(mLeServices.get(groupPos).uuid.toString())
             groupViewHolder.serviceType!!.text = if (mLeServices.get(groupPos).type == 0) getString(R.string.primary_srvice) else getString(R.string.secondary_service);
-            if (charValueList!!.size <= groupPos) {
-                charValueList!!.add(groupPos, ArrayList())
-            }
 
             return view
         }
@@ -331,117 +321,145 @@ class FragmentBleServices : Fragment() {
         @SuppressLint("SetTextI18n")
         override fun getChildView(groupPos: Int, childPos: Int, p2: Boolean, view: View?, p4: ViewGroup?): View {
 
-
             println("getChildView $groupPos $childPos")
 
-            val childViewHolder = ChildViewHolder()
+            if(childViews.contains(Pair(groupPos,childPos))){
+                //return view from HashMap childViews
+                return childViews.get(Pair(groupPos,childPos))!!
+            }else{
+                //create new view
+                val v = mInflator.inflate(R.layout.expandedlistitemchild, null)
+                val childViewHolder = ChildViewHolder()
 
-            val v = mInflator.inflate(R.layout.expandedlistitemchild, null)
-            childViewHolder.charName = v!!.findViewById(R.id.tv_characteristic_name)
-            childViewHolder.charUUID = v.findViewById(R.id.tv_characteristic_uuid)
-            childViewHolder.propertiesLinearlayout = v.findViewById(R.id.ll_properties)
-
-            //add or set new textView in charValueList that holds
-            if (charValueList.get(groupPos).size <= childPos) {
-                charValueList.get(groupPos).add(childPos, v.findViewById(R.id.tv_characteristic_value))
-            } else {
-                var text = charValueList.get(groupPos).get(childPos).text
-                var visibility = charValueList.get(groupPos).get(childPos).visibility
-                charValueList.get(groupPos).set(childPos, v.findViewById(R.id.tv_characteristic_value))
-                charValueList.get(groupPos).get(childPos).text = text
-                charValueList.get(groupPos).get(childPos).visibility = visibility
-            }
-
-            childViewHolder.charName!!.text = BLEConverter.getCharateristicName(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())
-            childViewHolder.charUUID!!.text = """UUID: ${UIIDFilter(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())}"""
-
-            //dynamically added clickable textViews that correspond to the properties of characteristic
-            for (tv in BLEConverter.getPropertiesTextViews(mLeCharacteristic.get(groupPos).get(childPos).properties, context)) {
-                childViewHolder.propertiesLinearlayout!!.addView(tv)
-                tv.setOnClickListener({ textview ->
-                    tv.startAnimation(AnimationUtils.loadAnimation(context, R.anim.propery_click))
-                    //read textView text
-                    val property = tv.text.toString()
-                    //onClickAction  depending on the property
-                    when (property) {
-                        "BROADCAST" -> {
-                            Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
-                        }
-                        "READ" -> {
-                            serviceBle!!.readCharacteristic(bleDeviceIndex!!, groupPos, childPos)
-
-                        }
-                        "WRITE NO RESPONSE" -> {
-                            val inflater = layoutInflater
-                            val dialoglayout = inflater.inflate(R.layout.alert_write_property, null)
-                            val builder = AlertDialog.Builder(context)
-                            var data = dialoglayout.findViewById<TextInputEditText>(R.id.tiet_data)
-
-                            builder.setView(dialoglayout)
-                            builder.setNegativeButton("Cancel", object : DialogInterface.OnClickListener {
-                                override fun onClick(dialog: DialogInterface?, witch: Int) {
-                                    dialog!!.dismiss()
-                                }
-
-                            })
-                            builder.setPositiveButton("Send", object : DialogInterface.OnClickListener {
-                                override fun onClick(dialog: DialogInterface?, witch: Int) {
-                                    serviceBle!!.writeCharacteristic(bleDeviceIndex!!, groupPos, childPos, data.text.toString())
-                                   //update text hare because no respond from service
-                                    charValueList.get(groupPos).get(childPos).text=data.text.toString()
-                                    dialog!!.dismiss()
-                                }
-
-                            })
-                            builder.show()
-
-                        }
-                        "WRITE" -> {
-                            val inflater = layoutInflater
-                            val dialoglayout = inflater.inflate(R.layout.alert_write_property, null)
-                            val builder = AlertDialog.Builder(context)
-                            var data = dialoglayout.findViewById<TextInputEditText>(R.id.tiet_data)
-
-                            builder.setView(dialoglayout)
-                            builder.setNegativeButton("Cancel", object : DialogInterface.OnClickListener {
-                                override fun onClick(dialog: DialogInterface?, witch: Int) {
-                                    dialog!!.dismiss()
-                                }
-
-                            })
-                            builder.setPositiveButton("Send", object : DialogInterface.OnClickListener {
-                                override fun onClick(dialog: DialogInterface?, witch: Int) {
-                                    serviceBle!!.writeCharacteristic(bleDeviceIndex!!, groupPos, childPos, data.text.toString())
-                                    dialog!!.dismiss()
-                                }
-
-                            })
-                            builder.show()
-
-
-                        }
-                        "NOTIFY" -> {
-                            serviceBle!!.setCharacteristicNotification(bleDeviceIndex!!, groupPos, childPos, true)
-                         //   Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
-                        }
-                        "INDICATE" -> {
-                            serviceBle!!.setCharacteristicNotification(bleDeviceIndex!!, groupPos, childPos, true)
-                         //   Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
-                        }
-                        "SIGNED WRITE" -> {
-                            Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
-                        }
-                        "EXTENDED PROPS" -> {
-                            Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
-                        }
-                        else -> {
-                            Toast.makeText(context, "WRONG PROPERTY", Toast.LENGTH_SHORT).show()
-                        }
-
+                childViewHolder.charName = v!!.findViewById(R.id.tv_characteristic_name)
+                childViewHolder.charUUID = v.findViewById(R.id.tv_characteristic_uuid)
+                childViewHolder.propertiesLinearlayout = v.findViewById(R.id.ll_properties)
+                childViewHolder.tvCharacteristicValue = v.findViewById(R.id.tv_characteristic_value)
+                childViewHolder.ibGraph = v.findViewById(R.id.ib_graph)
+                childViewHolder.ibGraph!!.setTag(R.drawable.graph_icon)
+                childViewHolder.ibGraph!!.setOnClickListener({
+                    if(Integer.parseInt(childViewHolder.ibGraph!!.getTag().toString()) == R.drawable.graph_icon){
+                        childViewHolder.ibGraph!!.setImageResource(R.drawable.graph_icon_strike)
+                        childViewHolder.ibGraph!!.setTag(R.drawable.graph_icon_strike)
+                        //use Tag to know if data should be broadcast
+                        v.setTag(R.drawable.graph_icon_strike)
+                    }else{
+                        childViewHolder.ibGraph!!.setImageResource(R.drawable.graph_icon)
+                        childViewHolder.ibGraph!!.setTag(R.drawable.graph_icon)
+                        //use Tag to know if data should be broadcast
+                        v.setTag(R.drawable.graph_icon)
                     }
                 })
+
+                childViewHolder.charName!!.text = BLEConverter.getCharateristicName(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())
+                childViewHolder.charUUID!!.text = """UUID: ${UIIDFilter(mLeCharacteristic!!.get(groupPos).get(childPos).uuid.toString())}"""
+
+                childViewHolder.propertiesLinearlayout = v.findViewById(R.id.ll_properties)
+                //dynamically added clickable textViews that correspond to the properties of characteristic
+                for (tv in BLEConverter.getPropertiesTextViews(mLeCharacteristic.get(groupPos).get(childPos).properties, context)) {
+                    childViewHolder.propertiesLinearlayout!!.addView(tv)
+                    tv.setOnClickListener({ textview ->
+                        tv.startAnimation(AnimationUtils.loadAnimation(context, R.anim.propery_click))
+                        //read textView text
+                        val property = tv.text.toString()
+                        //onClickAction  depending on the property
+                        when (property) {
+                            "BROADCAST" -> {
+                                Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
+                            }
+                            "READ" -> {
+                                serviceBle!!.readCharacteristic(deviceID!!, groupPos, childPos)
+
+                            }
+                            "WRITE NO RESPONSE" -> {
+                                val inflater = layoutInflater
+                                val dialoglayout = inflater.inflate(R.layout.alert_write_property, null)
+                                val builder = AlertDialog.Builder(context)
+                                var data = dialoglayout.findViewById<TextInputEditText>(R.id.tiet_data)
+
+                                builder.setView(dialoglayout)
+                                builder.setNegativeButton("Cancel", object : DialogInterface.OnClickListener {
+                                    override fun onClick(dialog: DialogInterface?, witch: Int) {
+                                        dialog!!.dismiss()
+                                    }
+
+                                })
+                                builder.setPositiveButton("Send", object : DialogInterface.OnClickListener {
+                                    override fun onClick(dialog: DialogInterface?, witch: Int) {
+                                        serviceBle!!.writeCharacteristic(deviceID!!, groupPos, childPos, data.text.toString())
+                                        //update text hare because no respond from service
+                                        childViewHolder.tvCharacteristicValue!!.text = data.text.toString()
+                                        dialog!!.dismiss()
+                                    }
+
+                                })
+                                builder.show()
+
+                            }
+                            "WRITE" -> {
+                                val inflater = layoutInflater
+                                val dialoglayout = inflater.inflate(R.layout.alert_write_property, null)
+                                val builder = AlertDialog.Builder(context)
+                                var data = dialoglayout.findViewById<TextInputEditText>(R.id.tiet_data)
+
+                                builder.setView(dialoglayout)
+                                builder.setNegativeButton("Cancel", object : DialogInterface.OnClickListener {
+                                    override fun onClick(dialog: DialogInterface?, witch: Int) {
+                                        dialog!!.dismiss()
+                                    }
+
+                                })
+                                builder.setPositiveButton("Send", object : DialogInterface.OnClickListener {
+                                    override fun onClick(dialog: DialogInterface?, witch: Int) {
+                                        serviceBle!!.writeCharacteristic(deviceID!!, groupPos, childPos, data.text.toString())
+                                        dialog!!.dismiss()
+                                    }
+
+                                })
+                                builder.show()
+
+
+                            }
+                            "NOTIFY" -> {
+                                if(tv.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG>0){
+                                    serviceBle!!.setCharacteristicNotification(deviceID!!, groupPos, childPos, false, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                                    tv.setPaintFlags(tv.getPaintFlags() and Paint.STRIKE_THRU_TEXT_FLAG.inv())
+                                }else{
+                                    serviceBle!!.setCharacteristicNotification(deviceID!!, groupPos, childPos, true, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                                    tv.setPaintFlags(tv.getPaintFlags() or Paint.STRIKE_THRU_TEXT_FLAG)
+                                }
+
+                                //   Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
+                            }
+                            "INDICATE" -> {
+                                if(tv.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG>0){
+                                    serviceBle!!.setCharacteristicNotification(deviceID!!, groupPos, childPos, false, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                                    tv.setPaintFlags(tv.getPaintFlags() and Paint.STRIKE_THRU_TEXT_FLAG.inv())
+                                }else{
+                                    serviceBle!!.setCharacteristicNotification(deviceID!!, groupPos, childPos, true, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
+                                    tv.setPaintFlags(tv.getPaintFlags() or Paint.STRIKE_THRU_TEXT_FLAG)
+                                }
+                            }
+                            "SIGNED WRITE" -> {
+                                Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
+                            }
+                            "EXTENDED PROPS" -> {
+                                Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
+                            }
+                            else -> {
+                                Toast.makeText(context, "WRONG PROPERTY", Toast.LENGTH_SHORT).show()
+                            }
+
+                        }
+                    })
+
+                }
+                //store v in HashMap
+                childViews.put(Pair(groupPos,childPos),v)
+                return v
             }
-            return v
+
+
         }
 
         override fun isChildSelectable(p0: Int, p1: Int): Boolean {

@@ -29,6 +29,9 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
+import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+import java.util.*
 
 
 class ServiceBle : Service() {
@@ -69,14 +72,6 @@ class ServiceBle : Service() {
 
     override fun onBind(intent: Intent): IBinder? {
         return mBinder
-    }
-
-    override fun onUnbind(intent: Intent): Boolean {
-        // After using a given device, you should make sure that BluetoothGatt.close() is called
-        // such that resources are cleaned up properly.  In this particular example, close() is
-        // invoked when the UI is disconnected from the Service.
-      //  close()
-        return super.onUnbind(intent)
     }
 
 
@@ -136,7 +131,7 @@ class ServiceBle : Service() {
 
         broadcastUpdate(deviceID,ACTION_GATT_CONNECTING)
 
-        mListBleDevices.get(deviceID)!!.bluetoothGatt =  mListBleDevices!!.get(deviceID)!!.device.connectGatt(this, false, object : BluetoothGattCallback() {
+        mListBleDevices.get(deviceID)!!.bluetoothGatt =  mListBleDevices.get(deviceID)!!.device.connectGatt(this, false, object : BluetoothGattCallback() {
 
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
 
@@ -145,7 +140,7 @@ class ServiceBle : Service() {
                     broadcastUpdate(deviceID,ACTION_GATT_CONNECTED)
                     Log.i(TAG, "Connected to GATT server.")
                     // Attempts to discover services after successful connection.
-                    Log.i(TAG, "Attempting to start serviceBle discovery:" +  mListBleDevices!!.get(deviceID)!!.bluetoothGatt!!.discoverServices())
+                    Log.i(TAG, "Attempting to start serviceBle discovery:" +  mListBleDevices.get(deviceID)!!.bluetoothGatt!!.discoverServices())
 
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
 
@@ -158,7 +153,7 @@ class ServiceBle : Service() {
             override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
 
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    mListBleDevices!!.get(deviceID)!!.updateSetvices()
+                    mListBleDevices.get(deviceID)!!.updateSetvices()
 
                     broadcastUpdate(deviceID,ACTION_GATT_SERVICES_DISCOVERED)
                 } else {
@@ -170,15 +165,15 @@ class ServiceBle : Service() {
                                               characteristic: BluetoothGattCharacteristic,
                                               status: Int) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic, mListBleDevices!!.get(deviceID)!!.getCharateristicIndex(characteristic))
+                    broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic, mListBleDevices.get(deviceID)!!.getCharateristicIndex(characteristic))
                     Log.w(TAG, "onCharacteristicRead")
                 }
             }
 
             override fun onCharacteristicChanged(gatt: BluetoothGatt,
                                                  characteristic: BluetoothGattCharacteristic) {
-                broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic,mListBleDevices!!.get(deviceID)!!.getCharateristicIndex(characteristic))
-                Log.w(TAG, "onCharacteristicRead")
+                broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic, mListBleDevices.get(deviceID)!!.getCharateristicIndex(characteristic))
+                Log.w(TAG, "onCharacteristicChanged")
 
 
 
@@ -188,14 +183,11 @@ class ServiceBle : Service() {
             override fun onCharacteristicWrite(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?, status: Int) {
                 super.onCharacteristicWrite(gatt, characteristic, status)
 
-                broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic!!,mListBleDevices!!.get(deviceID)!!.getCharateristicIndex(characteristic))
+                broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic!!, mListBleDevices.get(deviceID)!!.getCharateristicIndex(characteristic))
                 Log.w(TAG, "onCharacteristicRead")
-
             }
 
         })
-        Log.d(TAG, "Trying to create a new connection.")
-   //     bluetoothDeviceAddress = address
 
         return true
     }
@@ -246,7 +238,7 @@ class ServiceBle : Service() {
         }
         Log.w(TAG, "TRYING to read characteristic")
 
-        mListBleDevices!!.get(deviceID)!!.bluetoothGatt!!.readCharacteristic(mListBleDevices!!.get(deviceID)!!.getCharateristic(serviceIndex,charateristicIndex))
+        mListBleDevices.get(deviceID)!!.bluetoothGatt!!.readCharacteristic(mListBleDevices.get(deviceID)!!.getCharateristic(serviceIndex,charateristicIndex))
     }
 
     /**
@@ -264,9 +256,9 @@ class ServiceBle : Service() {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
-        val charateristic=mListBleDevices!!.get(deviceID)!!.getCharateristic(serviceIndex,charateristicIndex)
+        val charateristic= mListBleDevices.get(deviceID)!!.getCharateristic(serviceIndex,charateristicIndex)
         charateristic!!.value=data.toByteArray()
-        mListBleDevices!!.get(deviceID)!!.bluetoothGatt!!.writeCharacteristic(charateristic)
+        mListBleDevices.get(deviceID)!!.bluetoothGatt!!.writeCharacteristic(charateristic)
     }
 
     /**
@@ -278,16 +270,20 @@ class ServiceBle : Service() {
      * @param enabled If true, enable notification.  False otherwise.
      */
     fun setCharacteristicNotification(deviceID: Int,serviceIndex:Int,charateristicIndex:Int,
-                                      enabled: Boolean) {
+                                      enable: Boolean,descriptorValue:ByteArray) {
         if (bluetoothAdapter == null || mListBleDevices.get(deviceID)!!.bluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
-        val charateristic=mListBleDevices!!.get(deviceID)!!.getCharateristic(serviceIndex,charateristicIndex)
-        mListBleDevices!!.get(deviceID)!!.bluetoothGatt!!.setCharacteristicNotification(charateristic, enabled)
 
-//        Log.i(TAG,characteristic.properties.toString())
-//
+        val charateristic= mListBleDevices.get(deviceID)!!.getCharateristic(serviceIndex,charateristicIndex)
+        mListBleDevices[deviceID]!!.bluetoothGatt!!.setCharacteristicNotification(charateristic, enable)
+
+        val descriptor = charateristic!!.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID)
+        descriptor.value = if (enable) descriptorValue else DISABLE_NOTIFICATION_VALUE
+
+        mListBleDevices[deviceID]!!.bluetoothGatt!!.writeDescriptor(descriptor)
+
     }
 
 
@@ -306,6 +302,7 @@ class ServiceBle : Service() {
         val ACTION_GATT_DISCONNECTING= "com.example.bluetooth.le.ACTION_GATT_DISCONNECTING"
         val ACTION_GATT_SERVICES_DISCOVERED = "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED"
         val ACTION_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE"
+        val CLIENT_CHARACTERISTIC_CONFIG_UUID= UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
     }
 }

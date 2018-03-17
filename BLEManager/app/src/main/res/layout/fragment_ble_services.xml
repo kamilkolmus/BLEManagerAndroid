@@ -9,7 +9,7 @@
     <RelativeLayout
         android:layout_width="wrap_content"
         android:orientation="vertical"
-        android:animateLayoutChanges="true"
+        android:animateLayoutChanges="false"
 
         android:layout_height="match_parent">
 
@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
-            android:animateLayoutChanges="true"
+            android:animateLayoutChanges="false"
             android:groupIndicator="@null"
             android:headerDividersEnabled="true" />
 
@@ -34,13 +34,6 @@
 
     </RelativeLayout>
 
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/floatingactionbutton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="@dimen/fab_margin"
-        app:srcCompat="@drawable/graph_icon" />
 
 
 </android.support.design.widget.CoordinatorLayout>

@@ -25,6 +25,10 @@ import kotlinx.android.synthetic.main.app_bar_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.android.synthetic.main.nav_header_main.*
 import android.support.v4.view.PagerAdapter
+import android.support.v4.content.ContextCompat.startActivity
+import android.content.Intent
+
+
 
 
 
@@ -40,7 +44,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-
+        floatingactionbutton.setOnClickListener { view ->
+            val myIntent = Intent(this@MainActivity, GraphActivity::class.java)
+          //  myIntent.putExtra("key", value) //Optional parameters
+            this@MainActivity.startActivity(myIntent)
+            overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+//            Snackbar.make(view, "Graphical data visualization will be added soon", Snackbar.LENGTH_LONG)
+//                    .setAction("Action", null).show()
+        }
+        floatingactionbutton.hide()
 
         adapter = MyPagerAdapter(supportFragmentManager)
         mpager!!.offscreenPageLimit = 30
@@ -64,17 +76,24 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 when(mpager.currentItem){
                     //and update toolbar TextView to SCAN
                     //Scanner is always stopped after changing tab
-                    0->toolbar_textview.text=getString(R.string.scan)
+                    0->{toolbar_textview.text=getString(R.string.scan)
+                        floatingactionbutton.hide()
+                    }
+
+
 
                     //read state of current FragmentService and update toolbarTextView textField
-                    else-> if((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected==STATE_CONNECTED){
+                    else->{ if((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected==STATE_CONNECTED){
                         toolbar_textview.text=getString(R.string.disconnect)
+
                     }else if ((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected== STATE_DISCONNECTED){
                         toolbar_textview.text=getString(R.string.connect)
                     }else if((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected== STATE_DISCONNECTING){
                         Toast.makeText(applicationContext,"Device is disconnecting",Toast.LENGTH_SHORT).show()
                     } else if((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected== STATE_CONNECTING){
                         Toast.makeText(applicationContext,"Device is connecting",Toast.LENGTH_SHORT).show()
+                    }
+                        floatingactionbutton.show()
                     }
                 }
             }
@@ -94,6 +113,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     (adapter!!.getItem(0)as FragmentBleDevices).clearLeDevices()
                     (adapter!!.getItem(0)as FragmentBleDevices).scanLeDevice(true)
                 }
+
 
 
             }else{
@@ -120,6 +140,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
                 }
+
             }
         })
 
@@ -161,6 +182,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
     }
+
+
 
 
     override fun onRequestPermissionsResult(requestCode: Int,

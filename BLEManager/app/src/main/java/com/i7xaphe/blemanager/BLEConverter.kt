@@ -49,10 +49,10 @@ object BLEConverter {
 
 
 
-    fun getPropertiesTextViews(properties: Int, context: Context): MutableList<TextView> {
+    fun getPropertiesTextViews(properties: Int, context: Context): ArrayList<TextView> {
 
 
-        val list: MutableList<TextView> = mutableListOf()
+        val list: ArrayList<TextView> = ArrayList()
         var lparams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT)
         lparams.setMargins(12,0,0,0)

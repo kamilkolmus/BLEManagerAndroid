@@ -203,6 +203,12 @@ class ServiceBle : Service() {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
+        for(serviceIndex in 0 until  mListBleDevices.get(deviceID)!!.mListServices!!.size){
+            for(characteristicIndex in 0 until mListBleDevices.get(deviceID)!!.mListCharacteristic!!.get(serviceIndex).size){
+                setCharacteristicNotification(deviceID,serviceIndex,characteristicIndex,false,DISABLE_NOTIFICATION_VALUE)
+            }
+        }
+
         mListBleDevices.get(deviceID)!!.bluetoothGatt!!.disconnect()
         broadcastUpdate(deviceID,ACTION_GATT_DISCONNECTING)
     }
@@ -280,9 +286,11 @@ class ServiceBle : Service() {
         mListBleDevices[deviceID]!!.bluetoothGatt!!.setCharacteristicNotification(charateristic, enable)
 
         val descriptor = charateristic!!.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID)
-        descriptor.value = if (enable) descriptorValue else DISABLE_NOTIFICATION_VALUE
+        if(descriptor!=null){
+            descriptor.value = if (enable) descriptorValue else DISABLE_NOTIFICATION_VALUE
+            mListBleDevices[deviceID]!!.bluetoothGatt!!.writeDescriptor(descriptor)
+        }
 
-        mListBleDevices[deviceID]!!.bluetoothGatt!!.writeDescriptor(descriptor)
 
     }
 

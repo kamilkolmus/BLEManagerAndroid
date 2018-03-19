@@ -46,7 +46,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         floatingactionbutton.setOnClickListener { view ->
             val myIntent = Intent(this@MainActivity, GraphActivity::class.java)
-          //  myIntent.putExtra("key", value) //Optional parameters
+          //  myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            myIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT )
             this@MainActivity.startActivity(myIntent)
             overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
 //            Snackbar.make(view, "Graphical data visualization will be added soon", Snackbar.LENGTH_LONG)

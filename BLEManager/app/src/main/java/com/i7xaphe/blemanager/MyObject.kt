@@ -9,11 +9,17 @@ import android.support.annotation.RequiresApi
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import java.util.HashMap
 
 /**
  * Created by Kamil on 2018-03-04.
  */
-object BLEConverter {
+object MyObject {
+
+    //common collection storing information about the characteristics
+    //fragmentBleService can add information here
+    //GraphActivity can read them
+    var multiDeviceCharCollection = HashMap<Pair<Int,Pair<Int,Int>>,GraphChrateristicInfo>()
 
     fun getServiceName(uuid: String): String {
         println(uuid)

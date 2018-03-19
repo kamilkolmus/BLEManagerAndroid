@@ -1,13 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/tv_test"
-        android:text="TEST"/>
+
+
+    <EditText
+        android:id="@+id/ed_test_area"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:inputType="text|textMultiLine"
+
+        android:clickable="false"
+        android:cursorVisible="false"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:gravity="left|top"
+        tools:ignore="RtlHardcoded" />
+
+    <EditText
+        android:id="@+id/ed_test_area2"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:inputType="text|textMultiLine"
+
+        android:clickable="false"
+        android:cursorVisible="false"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:gravity="left|top"
+        tools:ignore="RtlHardcoded" />
 
 </LinearLayout>

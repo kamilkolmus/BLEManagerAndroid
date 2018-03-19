@@ -50,7 +50,10 @@
             android:layout_width="20dp"
             android:layout_gravity="center_vertical|end"
             android:layout_height="20dp"
-            android:src="@drawable/graph_icon"/>
+            android:src="@drawable/graph_icon"
+            android:visibility="gone"
+            android:focusable="true"
+            />
 
     </LinearLayout>
 
@@ -113,9 +116,6 @@
             />
 
     </LinearLayout>
-
-
-
 
 
 </LinearLayout>

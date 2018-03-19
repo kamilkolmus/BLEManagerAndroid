@@ -55,11 +55,16 @@ class FragmentBleDevices : ListFragment() {
      override fun onListItemClick(l: ListView, v: View, position: Int, id: Long) {
 
         super.onListItemClick(l, v, position, id)
+         //stop scanning devices
         scanLeDevice(false)
          val device = mLeDeviceListAdapter!!.getDevice(position)
+         if(device==null){
+             Toast.makeText(context,"Enable to connect to device",Toast.LENGTH_SHORT)
+            return
+         }
          //calling a function in MainActivity to add a new fragmentBleService to pagerView
         (activity as MainActivity).addNewTab(device!!.name,device!!.address)
-         mLeDeviceListAdapter!!.removeDevice(position)
+      //   mLeDeviceListAdapter!!.removeDevice(position)
          mLeDeviceListAdapter!!.notifyDataSetChanged()
 
 
@@ -179,10 +184,8 @@ class FragmentBleDevices : ListFragment() {
         }
     }
 
-
-
     companion object {
-        private val SCAN_PERIOD: Long = 6000
+        private val SCAN_PERIOD: Long = 5000
     }
 }
 

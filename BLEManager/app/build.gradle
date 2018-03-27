@@ -34,4 +34,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile group: 'com.androidplot', name: 'androidplot-core', version: '1.5.4'
+    compile group: 'commons-codec', name: 'commons-codec', version: '1.9'
+    compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.1'
+
 }

@@ -7,13 +7,11 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import kotlinx.android.synthetic.main.content_graph.*
 import android.os.Build
 import android.support.annotation.RequiresApi
-import android.support.v7.app.ActionBar
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,8 +24,6 @@ import com.androidplot.ui.SizeMetric
 import com.androidplot.ui.SizeMode
 import com.androidplot.util.Redrawer
 import com.androidplot.xy.*
-import com.i7xaphe.blemanager.R.id.bar
-import kotlinx.android.synthetic.main.app_bar_main.*
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.text.DecimalFormat
@@ -38,51 +34,61 @@ import kotlin.math.floor
 /**
  * Created by Kamil on 2018-03-17.
  */
-class GraphActivity : AppCompatActivity(){
+class GraphActivity : AppCompatActivity() {
 
-    val context:Context=this
-    var counter=0
-    private val series:HashMap<Pair<Int,Pair<Int,Int>>,SimpleXYSeries> = HashMap()
+    val context: Context = this
+    var counter = 0
+    private val series: HashMap<Pair<Int, Pair<Int, Int>>, SimpleXYSeries> = HashMap()
     private var redrawer: Redrawer? = null
-    private val historySize = 100
-
+    private var historySize = 100
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_graph)
-       // setSupportActionBar(toolbar)
 
         registerReceiver(broadcastReceiver, makeIntentFilter())
-        listview_selected_char.onItemClickListener = OnItemClickListener { arg0, arg1, position, arg3
-            -> println(multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.characteristicName)
-             val dialog=DialogGraphSettings(this,
-                    object : DialogGraphSettingsInterface{
-                        override fun onSaveClick(data:String){
-                            try{
-                                multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation=data
-                                println(multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation)
-                            }catch (e:Exception){
-                                e.printStackTrace()
-                            }
 
-                        }
-                    }, multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation)
+        listview_selected_char.onItemClickListener = OnItemClickListener { arg0, arg1, position, arg3
+            ->
+            println(multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.characteristicName)
+            var dialog = DialogCharateristicSettings(this, object : DialogCharateristicSettingsInterface {
+                override fun onSaveClick(data: String) {
+                    try {
+                        multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation = data
+                        println(multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+
+                }
+            }, multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation)
             dialog.show()
         }
-        MultiDeviceCharCollectionObserver.setInterface(object :MultiDeviceCharCollectionInterface{
+
+        plot.setOnClickListener({
+            var dialog = DialogGraphSettings(this, object : DialogGraphSettingsInterface {
+                override fun historySize(historySize: Int) {
+                    plot!!.setDomainBoundaries(0, historySize, BoundaryMode.FIXED)
+                    this@GraphActivity.historySize = historySize
+                }
+            }, historySize)
+            dialog.show()
+        })
+
+        MultiDeviceCharCollectionObserver.setInterface(object : MultiDeviceCharCollectionInterface {
 
             override fun add(key: Pair<Int, Pair<Int, Int>>, info: GraphChrateristicInfo) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    series.put(key,SimpleXYSeries(info.characteristicName))
+                    series.put(key, SimpleXYSeries(info.characteristicName))
                     val series1Format = LineAndPointFormatter()
-                    series.get(key)!! .useImplicitXVals()
+                    series.get(key)!!.useImplicitXVals()
 
                     series1Format.configure(context,
                             R.xml.led1_time)
 
-                    plot!!.addSeries(series.get(key),series1Format)
-                    listview_selected_char.adapter=MyAdapter()
+                    plot!!.addSeries(series.get(key), series1Format)
+                    listview_selected_char.adapter = MyAdapter()
                     println("Get notyfication")
                 }
             }
@@ -91,7 +97,7 @@ class GraphActivity : AppCompatActivity(){
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     plot.removeSeries(series.get(key))
                     series.remove(key)
-                    listview_selected_char.adapter=MyAdapter()
+                    listview_selected_char.adapter = MyAdapter()
                 }
             }
 
@@ -106,37 +112,38 @@ class GraphActivity : AppCompatActivity(){
     @RequiresApi(Build.VERSION_CODES.N)
     override fun onResume() {
         super.onResume()
-       // notifyCharacteristicChange()
+        // notifyCharacteristicChange()
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
-    fun notifyCharacteristicChange(){
+    fun notifyCharacteristicChange() {
         series.clear()
         plot.clear()
         createPlotFormat()
-        if(redrawer!=null){
+        if (redrawer != null) {
             redrawer!!.finish()
         }
         redrawer = Redrawer(plot, 20f, false)
         multiDeviceCharCollection.forEach { key, value ->
 
-            series.put(Pair(key.first,Pair(key.second.first,key.second.second)),SimpleXYSeries(value.characteristicName))
+            series.put(Pair(key.first, Pair(key.second.first, key.second.second)), SimpleXYSeries(value.characteristicName))
             val series1Format = LineAndPointFormatter()
             series1Format.configure(this,
                     R.xml.led1_time)
-            series.get(Pair(key.first,Pair(key.second.first,key.second.second)))!! .useImplicitXVals();
-            plot!!.addSeries(series.get(Pair(key.first,Pair(key.second.first,key.second.second))),series1Format)
+            series.get(Pair(key.first, Pair(key.second.first, key.second.second)))!!.useImplicitXVals();
+            plot!!.addSeries(series.get(Pair(key.first, Pair(key.second.first, key.second.second))), series1Format)
         }
         redrawer!!.start()
-        listview_selected_char.adapter=MyAdapter()
+        listview_selected_char.adapter = MyAdapter()
     }
 
     override fun onBackPressed() {
         moveTaskToBack(true)
         overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
-       // redrawer!!.pause()
+        // redrawer!!.pause()
 
     }
+
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(broadcastReceiver)
@@ -147,97 +154,99 @@ class GraphActivity : AppCompatActivity(){
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
             counter++
-            if(action == ACTION_SEND_CHARACTERISTIC_VALUE){
+            if (action == ACTION_SEND_CHARACTERISTIC_VALUE) {
 
-                val deviceIndex=intent.getIntExtra(EXTRA_DEVICE_ID,0)
-                val serviceindex=intent.getIntExtra(EXTRA_SERVICE_INDEX,0)
-                val charateristicIndex=intent.getIntExtra(EXTRA_CHARACTERISTIC_INDEX,0)
-                val data=intent.getByteArrayExtra(EXTRA_DATA)
+                val deviceIndex = intent.getIntExtra(EXTRA_DEVICE_ID, 0)
+                val serviceindex = intent.getIntExtra(EXTRA_SERVICE_INDEX, 0)
+                val charateristicIndex = intent.getIntExtra(EXTRA_CHARACTERISTIC_INDEX, 0)
+                val data = intent.getByteArrayExtra(EXTRA_DATA)
 
-                val seria =series.get(key = Pair(deviceIndex, Pair(serviceindex,charateristicIndex)))
-                val chrateristicInfo=multiDeviceCharCollection.get(Pair(deviceIndex,Pair(serviceindex,charateristicIndex)))
-                if(chrateristicInfo!=null){
-                    var rule=chrateristicInfo!!.dataRoleInterpratation
-                    updateCharateristic(seria,deviceIndex,serviceindex,charateristicIndex,data,rule)
+                val seria = series.get(key = Pair(deviceIndex, Pair(serviceindex, charateristicIndex)))
+                val chrateristicInfo = multiDeviceCharCollection.get(Pair(deviceIndex, Pair(serviceindex, charateristicIndex)))
+                if (chrateristicInfo != null) {
+                    var rule = chrateristicInfo!!.dataRoleInterpratation
+                    updateCharateristic(seria, deviceIndex, serviceindex, charateristicIndex, data, rule)
                 }
 
             }
         }
     }
 
-    private fun updateCharateristic(seria: SimpleXYSeries?, deviceIndex: Int, serviceindex: Int, charateristicIndex: Int, data: ByteArray,rule:String) {
-        if(seria!=null){
-            var values=convertData( data,rule)
-            if(values!=null){
-                for(i in 0 until values.size) {
-                 //   println ("value "+values[i])
+    private fun updateCharateristic(seria: SimpleXYSeries?, deviceIndex: Int, serviceindex: Int, charateristicIndex: Int, data: ByteArray, rule: String) {
+        if (seria != null) {
+            var values = convertData(data, rule)
+            if (values != null) {
+                for (i in 0 until values.size) {
+                    //   println ("value "+values[i])
                     seria.addLast(null, values[i])
-                    while(seria.size()>historySize){
+                    while (seria.size() > historySize) {
                         seria.removeFirst()
                     }
                 }
-            }else{
+            } else {
                 seria.clear()
             }
-        }else{
-            println("series for:"+deviceIndex+" "+serviceindex+" "+charateristicIndex+" is null")
+        } else {
+            println("series for:" + deviceIndex + " " + serviceindex + " " + charateristicIndex + " is null")
         }
     }
 
-    private fun convertData(data: ByteArray,rule: String): DoubleArray? {
+    private fun convertData(data: ByteArray, rule: String): DoubleArray? {
 
-            when (rule) {
-                "NULL" -> return null
-                "STRING" -> return interpretAsString(data)
-                "INTEGER" -> return interpretAsInteger(data)
-                "FLOAT" -> return interpretAsFloat(data)
-                else -> return null
-            }
+        when (rule) {
+            "NULL" -> return null
+            "STRING" -> return interpretAsString(data)
+            "INTEGER" -> return interpretAsInteger(data)
+            "FLOAT" -> return interpretAsFloat(data)
+            else -> return null
+        }
     }
 
     private fun interpretAsString(data: ByteArray): DoubleArray {
-        val string= String(data).replace("(\r\n|\t|\n\r|\r)".toRegex(), "\n").split("\n")
+        val string = String(data).replace("(\r\n|\t|\n\r|\r)".toRegex(), "\n").split("\n")
         var values = DoubleArray(string.size)
-        for(i in 0 until string.size){
+        for (i in 0 until string.size) {
             try {
-                values[i]=string[i].toDouble()
-            }catch (e:NumberFormatException){
-                values[i]=0.0
+                values[i] = string[i].toDouble()
+            } catch (e: NumberFormatException) {
+                values[i] = 0.0
             }
         }
         return values
     }
+
     private fun interpretAsInteger(data: ByteArray): DoubleArray {
         val size = data.size
-      //  println("data: ByteArray"+Arrays.toString(data))
-        var values =  DoubleArray((floor((size/4.0))).toInt())
-        for(i in 0 until size step 4){
-            var sample= byteArrayOf(data[i],data[i+1],data[i+2],data[i+3])
-        //    println("sample: ByteArray"+Arrays.toString(sample))
-            values[(i+1)/4]= ByteBuffer.wrap(sample).order(ByteOrder.LITTLE_ENDIAN).getInt().toDouble()
-       //     println("values: ByteArray"+Arrays.toString(values))
+        //  println("data: ByteArray"+Arrays.toString(data))
+        var values = DoubleArray((floor((size / 4.0))).toInt())
+        for (i in 0 until size step 4) {
+            var sample = byteArrayOf(data[i], data[i + 1], data[i + 2], data[i + 3])
+            //    println("sample: ByteArray"+Arrays.toString(sample))
+            values[(i + 1) / 4] = ByteBuffer.wrap(sample).order(ByteOrder.LITTLE_ENDIAN).getInt().toDouble()
+            //     println("values: ByteArray"+Arrays.toString(values))
         }
         return values
     }
+
     private fun interpretAsFloat(data: ByteArray): DoubleArray {
         val size = data.size
-        var values =  DoubleArray((floor((size/4.0))).toInt())
-        for(i in 0 until size step 4){
-            var sample=byteArrayOf(data[i],data[i+1],data[i+2],data[i+3])
-            values[(i+1)/4]= ByteBuffer.wrap(sample).order(ByteOrder.LITTLE_ENDIAN).getFloat().toDouble()
+        var values = DoubleArray((floor((size / 4.0))).toInt())
+        for (i in 0 until size step 4) {
+            var sample = byteArrayOf(data[i], data[i + 1], data[i + 2], data[i + 3])
+            values[(i + 1) / 4] = ByteBuffer.wrap(sample).order(ByteOrder.LITTLE_ENDIAN).getFloat().toDouble()
 
         }
         return values
     }
 
 
-    inner class MyHolder{
-        var deviceName:TextView?= null
-        var characteristicName:TextView?= null
-        var serviceName:TextView?= null
+    inner class MyHolder {
+        var deviceName: TextView? = null
+        var characteristicName: TextView? = null
+        var serviceName: TextView? = null
     }
 
-    inner class MyAdapter: BaseAdapter() {
+    inner class MyAdapter : BaseAdapter() {
 
         private val mInflator: LayoutInflater = layoutInflater
         var kays = ArrayList(multiDeviceCharCollection.keys)
@@ -245,27 +254,27 @@ class GraphActivity : AppCompatActivity(){
 
         override fun getView(i: Int, p1: View?, p2: ViewGroup?): View {
 
-                var view = mInflator.inflate(R.layout.listitem_selsected_char,null)
-                var myHolder=MyHolder()
-                myHolder.deviceName=view.findViewById(R.id.tv_device_name)
-                myHolder.serviceName=view.findViewById(R.id.tv_service_name)
-                myHolder.characteristicName=view.findViewById(R.id.tv_characteristic_name)
+            var view = mInflator.inflate(R.layout.listitem_selsected_char, null)
+            var myHolder = MyHolder()
+            myHolder.deviceName = view.findViewById(R.id.tv_device_name)
+            myHolder.serviceName = view.findViewById(R.id.tv_service_name)
+            myHolder.characteristicName = view.findViewById(R.id.tv_characteristic_name)
 
-                myHolder.deviceName!!.text=multiDeviceCharCollection.get(kays.get(i))!!.deviceName
-                myHolder.serviceName!!.text=multiDeviceCharCollection.get(kays.get(i))!!.serviceName
+            myHolder.deviceName!!.text = multiDeviceCharCollection.get(kays.get(i))!!.deviceName
+            myHolder.serviceName!!.text = multiDeviceCharCollection.get(kays.get(i))!!.serviceName
 
-                myHolder.characteristicName!!.text=multiDeviceCharCollection.get(kays.get(i))!!.characteristicName
+            myHolder.characteristicName!!.text = multiDeviceCharCollection.get(kays.get(i))!!.characteristicName
 
-                return view
+            return view
 
         }
 
         override fun getItem(i: Int): GraphChrateristicInfo {
-           return multiDeviceCharCollection.get(kays.get(i))!!
+            return multiDeviceCharCollection.get(kays.get(i))!!
         }
 
         override fun getItemId(i: Int): Long {
-            return  i.toLong()
+            return i.toLong()
         }
 
         override fun getCount(): Int {
@@ -294,7 +303,7 @@ class GraphActivity : AppCompatActivity(){
         return intentFilter
     }
 
-    internal fun createPlotFormat(){
+    internal fun createPlotFormat() {
         plot!!.setRangeBoundaries(0, 1200, BoundaryMode.AUTO)
 
 

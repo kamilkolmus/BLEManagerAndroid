@@ -41,6 +41,7 @@ import kotlinx.android.synthetic.main.fragment_ble_services.*
 
 import android.widget.RelativeLayout
 import android.widget.RelativeLayout.LayoutParams
+import javax.xml.bind.DatatypeConverter
 
 
 class FragmentBleServices : Fragment() {
@@ -174,8 +175,6 @@ class FragmentBleServices : Fragment() {
         super.onResume()
         activity.registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter())
 
-       // (activity as MainActivity).sendBroadcast()
-
     }
 
     //function  to connect to ble device
@@ -204,17 +203,17 @@ class FragmentBleServices : Fragment() {
                 if(type=="CHANGED"){
                     if(enableUpdateCharValue){
                         enableUpdateCharValue=false
-                        println("start")
+                     //   println("start")
                         (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
-                        (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).text = String(data!!)
+                        (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).text = (String(data!!)+"\n"+Utils.byteArrayToHex(data))
                         Handler().postDelayed( {
                             enableUpdateCharValue=true
                         },500)
-                        println("stop")
+                   //     println("stop")
                     }
                 }else{
                     (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
-                    (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).text = String(data!!)
+                    (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).text = (String(data!!)+"\n"+Utils.byteArrayToHex(data))
                 }
             }
             if ((expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<ImageButton>(R.id.ib_graph).getTag() == 1) {
@@ -227,12 +226,12 @@ class FragmentBleServices : Fragment() {
                        intent.putExtra(GraphActivity.EXTRA_DEVICE_NAME, deviceName)
                        intent.putExtra(GraphActivity.EXTRA_DEVICE_ADDRESS, deviceAddress)
                        intent.putExtra(GraphActivity.EXTRA_SERVICE_NAME, (expanderListAdapter as MyExpanderListAdapter).groupViews!!.get(groupPos)!!.findViewById<TextView>(R.id.tv_service_name).text.toString())
-                      intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_NAME, (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_name).text.toString())
-                      intent.putExtra(GraphActivity.EXTRA_DATA, data)
-                      intent.putExtra(GraphActivity.EXTRA_SERVICE_INDEX, groupPos)
-                      intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_INDEX, childPos)
-                      intent.putExtra(GraphActivity.EXTRA_DEVICE_ID, deviceID)
-                      (activity as MainActivity).sendBroadcast(intent)
+                       intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_NAME, (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_name).text.toString())
+                       intent.putExtra(GraphActivity.EXTRA_DATA, data)
+                       intent.putExtra(GraphActivity.EXTRA_SERVICE_INDEX, groupPos)
+                       intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_INDEX, childPos)
+                       intent.putExtra(GraphActivity.EXTRA_DEVICE_ID, deviceID)
+                       (activity as MainActivity).sendBroadcast(intent)
                     }catch (e:ClassCastException){
                         e.printStackTrace()
                     }
@@ -383,19 +382,17 @@ class FragmentBleServices : Fragment() {
                         //use Tag to know if data should be broadcast
                         //broadcast data
                         childViewHolder.ibGraph!!.setTag(1)
-
-                        MultiDeviceCharCollectionObserver.addtoMultiDeviceCharCollection(
-                                Pair(deviceID!!,Pair(groupPos,childPos)) ,
+                        MultiDeviceCharCollectionObserver.addtoMultiDeviceCharCollection(Pair(deviceID!!,Pair(groupPos,childPos)) ,
                                 GraphChrateristicInfo(deviceName!!,groupViews!!.get(groupPos)!!.findViewById<TextView>(R.id.tv_service_name).text.toString(),
                                         childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_name).text.toString()))
                         notifyDataSetChanged()
 
                     }else{
+
                         childViewHolder.ibGraph!!.setImageResource(R.drawable.graph_icon)
                         childViewHolder.ibGraph!!.setTag(R.drawable.graph_icon)
                         //use Tag to know if data should be broadcast
                         childViewHolder.ibGraph!!.setTag(0)
-
                         MultiDeviceCharCollectionObserver.removeMultiDeviceCharCollection(Pair(deviceID!!,Pair(groupPos,childPos)))
                         notifyDataSetChanged()
 
@@ -510,6 +507,7 @@ class FragmentBleServices : Fragment() {
                             }
 
                         }
+                        notifyDataSetChanged()
                     })
 
                 }

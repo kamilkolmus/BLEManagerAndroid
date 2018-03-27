@@ -2,7 +2,7 @@
 Universal application for Bluetooth low energy that allows you to display data on the graph in real time from many charateristics
 
 
-![Alt Text](https://media.giphy.com/media/1AftgcGYmyURJzsFUp/giphy.gif)
+![Alt Text](https://media.giphy.com/media/28nbQ0MU3T4XHIZIyK/giphy.gif)
 
 Currently work:
 -scaning BLE devices

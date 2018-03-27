@@ -5,9 +5,13 @@ Universal application for Bluetooth low energy that allows you to display data o
 ![Alt Text](https://media.giphy.com/media/28nbQ0MU3T4XHIZIyK/giphy.gif)
 
 Currently work:
+
 -scaning BLE devices
+
 -discover service and charateristrics
+
 -implemented action for premisions: write, read, notify and indicate
+
 -ability to add and display transmitted charateristics on the graph if the values are sent as: float, integer or as string (values parsed to float)
 
 For testing, I use my own design device for measure PPG signal (two channels) with Bletooth low energy module

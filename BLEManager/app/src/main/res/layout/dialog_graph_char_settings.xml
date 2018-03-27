@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="SELECT DATA FORMAT"
+        tools:ignore="MissingConstraints" />
+
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:id="@+id/radio_group">
+    <RadioButton
+        android:id="@+id/rb_none"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="NONE"
+        android:layout_marginStart="10dp"
+        tools:ignore="MissingConstraints" />
+
+    <RadioButton
+        android:id="@+id/rb_string"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="STRING"
+        android:layout_marginStart="10dp"
+        tools:layout_editor_absoluteX="29dp"
+        tools:layout_editor_absoluteY="109dp"
+        tools:ignore="MissingConstraints" />
+
+    <RadioButton
+        android:id="@+id/rb_int"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="INTEGER"
+        android:layout_marginStart="10dp"
+        tools:ignore="MissingConstraints" />
+
+    <RadioButton
+        android:id="@+id/rb_float"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FLOAT"
+        android:layout_marginStart="10dp"
+        tools:ignore="MissingConstraints" />
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/info"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CANCEL"
+            android:layout_gravity="center_vertical|end"
+            android:layout_marginStart="5dp"
+            tools:ignore="MissingConstraints" />
+        <android.support.v4.widget.Space
+            android:layout_width="50dp"
+            android:layout_height="match_parent" />
+
+        <Button
+            android:id="@+id/save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SAVE"
+            android:layout_marginEnd="5dp"
+            tools:ignore="MissingConstraints" />
+    </LinearLayout>
+
+</LinearLayout>

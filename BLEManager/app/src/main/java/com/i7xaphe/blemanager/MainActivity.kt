@@ -81,8 +81,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         floatingactionbutton.hide()
                     }
 
-
-
                     //read state of current FragmentService and update toolbarTextView textField
                     else->{ if((adapter!!.getItem(mpager.currentItem)as FragmentBleServices).connected==STATE_CONNECTED){
                         toolbar_textview.text=getString(R.string.disconnect)
@@ -212,6 +210,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             drawer_layout.closeDrawer(GravityCompat.START)
         } else {
             super.onBackPressed()
+            System.exit(0)
         }
     }
 
@@ -251,6 +250,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         adapter!!.addFragment(name,address)
 
     }
+
 
     inner class MyPagerAdapter(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 

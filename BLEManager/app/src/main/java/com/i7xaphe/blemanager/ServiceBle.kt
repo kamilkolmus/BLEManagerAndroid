@@ -23,13 +23,11 @@ import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
-import android.bluetooth.BluetoothProfile.*
 import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
-import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
 import java.util.*
 
@@ -48,21 +46,22 @@ class ServiceBle : Service() {
 
     private fun broadcastUpdate(deviceID: Int,action: String) {
         val intent = Intent(action)
-        intent.putExtra(DEVICE_ID,deviceID)
+        intent.putExtra(EXTRA_DEVICE_ID,deviceID)
         sendBroadcast(intent)
     }
 
     private fun broadcastUpdate(deviceID: Int,action: String,
-                                characteristic: BluetoothGattCharacteristic,pair: Pair<Int,Int>) {
+                                characteristic: BluetoothGattCharacteristic,pair: Pair<Int,Int>,type:String) {
         val intent = Intent(action)
 
         val data = characteristic.value
-        intent.putExtra(DEVICE_ID,deviceID)
-        intent.putExtra(CHARATERISTIC_DATA, String(data))
-        intent.putExtra(SERVICE_INDEX,pair.first)
-        intent.putExtra(CHARATERISTIC_INDEX,pair.second)
+        intent.putExtra(EXTRA_ACTION_TYPE,type)
+        intent.putExtra(EXTRA_DEVICE_ID,deviceID)
+        intent.putExtra(EXTRA_CHARATERISTIC_DATA,data)
+        intent.putExtra(EXTRA_SERVICE_INDEX,pair.first)
+        intent.putExtra(EXTRA_CHARATERISTIC_INDEX,pair.second)
         sendBroadcast(intent)
-        Log.w(TAG, "broadcastUpdate")
+    //    Log.w(TAG, "broadcastUpdate")
     }
 
     inner class LocalBinder : Binder() {
@@ -165,15 +164,15 @@ class ServiceBle : Service() {
                                               characteristic: BluetoothGattCharacteristic,
                                               status: Int) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic, mListBleDevices.get(deviceID)!!.getCharateristicIndex(characteristic))
-                    Log.w(TAG, "onCharacteristicRead")
+                    broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic, mListBleDevices.get(deviceID)!!.getCharateristicIndex(characteristic),"READ")
+            //        Log.w(TAG, "onCharacteristicRead")
                 }
             }
 
             override fun onCharacteristicChanged(gatt: BluetoothGatt,
                                                  characteristic: BluetoothGattCharacteristic) {
-                broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic, mListBleDevices.get(deviceID)!!.getCharateristicIndex(characteristic))
-                Log.w(TAG, "onCharacteristicChanged")
+                broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic, mListBleDevices.get(deviceID)!!.getCharateristicIndex(characteristic),"CHANGED")
+           //     Log.w(TAG, "onCharacteristicChanged")
 
 
 
@@ -183,8 +182,8 @@ class ServiceBle : Service() {
             override fun onCharacteristicWrite(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?, status: Int) {
                 super.onCharacteristicWrite(gatt, characteristic, status)
 
-                broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic!!, mListBleDevices.get(deviceID)!!.getCharateristicIndex(characteristic))
-                Log.w(TAG, "onCharacteristicRead")
+                broadcastUpdate(deviceID,ACTION_DATA_AVAILABLE, characteristic!!, mListBleDevices.get(deviceID)!!.getCharateristicIndex(characteristic),"WRITE")
+            //    Log.w(TAG, "onCharacteristicRead")
             }
 
         })
@@ -300,10 +299,11 @@ class ServiceBle : Service() {
     }
 
     companion object {
-        val CHARATERISTIC_DATA = "com.example.bluetooth.le.CHARATERISTIC_DATA"
-        val SERVICE_INDEX = "com.example.bluetooth.le.SERVICE_INDEX"
-        val CHARATERISTIC_INDEX = "com.example.bluetooth.le.CHARATERISTIC_INDEX"
-        val DEVICE_ID = "com.example.bluetooth.le.DEVICE_ID"
+        val EXTRA_CHARATERISTIC_DATA = "com.example.bluetooth.le.EXTRA_CHARATERISTIC_DATA"
+        val EXTRA_SERVICE_INDEX = "com.example.bluetooth.le.EXTRA_SERVICE_INDEX"
+        val EXTRA_CHARATERISTIC_INDEX = "com.example.bluetooth.le.EXTRA_CHARATERISTIC_INDEX"
+        val EXTRA_DEVICE_ID = "com.example.bluetooth.le.EXTRA_DEVICE_ID"
+        val EXTRA_ACTION_TYPE = "com.example.bluetooth.le.EXTRA_ACTION_TYPE"
         val ACTION_GATT_CONNECTED = "com.example.bluetooth.le.ACTION_GATT_CONNECTED"
         val ACTION_GATT_CONNECTING= "com.example.bluetooth.le.ACTION_GATT_CONNECTING"
         val ACTION_GATT_DISCONNECTED = "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED"

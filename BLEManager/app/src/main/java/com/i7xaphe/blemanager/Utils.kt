@@ -1,25 +1,15 @@
 package com.i7xaphe.blemanager
 
 import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattCharacteristic.*
 import android.content.Context
 import android.graphics.Typeface
-import android.os.Build
-import android.support.annotation.RequiresApi
-import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import java.util.HashMap
 
 /**
- * Created by Kamil on 2018-03-04.
+ * Created by Kamil on 2018-03-26.
  */
-object MyObject {
-
-    //common collection storing information about the characteristics
-    //fragmentBleService can add information here
-    //GraphActivity can read them
-    var multiDeviceCharCollection = HashMap<Pair<Int,Pair<Int,Int>>,GraphChrateristicInfo>()
+object Utils {
 
     fun getServiceName(uuid: String): String {
         println(uuid)
@@ -29,6 +19,7 @@ object MyObject {
             else -> "Custom Service"
 
         }
+
     }
 
     fun getCharateristicName(uuid: String): String {
@@ -65,7 +56,7 @@ object MyObject {
 
 
 
-        if (PROPERTY_BROADCAST and properties != 0) {
+        if (BluetoothGattCharacteristic.PROPERTY_BROADCAST and properties != 0) {
 
             list.add(TextView(context))
             list.last().text  = "BROADCAST"
@@ -73,7 +64,7 @@ object MyObject {
             list.last().layoutParams= lparams
             list.last().isClickable=true
         }
-        if (PROPERTY_READ and properties != 0) {
+        if (BluetoothGattCharacteristic.PROPERTY_READ and properties != 0) {
 
             list.add(TextView(context))
             list.last().text  = "READ"
@@ -81,7 +72,7 @@ object MyObject {
             list.last().layoutParams= lparams
             list.last().isClickable=true
         }
-        if (PROPERTY_WRITE_NO_RESPONSE and properties != 0) {
+        if (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE and properties != 0) {
 
             list.add(TextView(context))
             list.last().text = "WRITE NO RESPONSE"
@@ -89,7 +80,7 @@ object MyObject {
             list.last().layoutParams= lparams
             list.last().isClickable=true
         }
-        if (PROPERTY_WRITE and properties != 0) {
+        if (BluetoothGattCharacteristic.PROPERTY_WRITE and properties != 0) {
 
             list.add(TextView(context))
             list.last().text  = "WRITE"
@@ -98,7 +89,7 @@ object MyObject {
             list.last().isClickable=true
 
         }
-        if (PROPERTY_NOTIFY and properties != 0) {
+        if (BluetoothGattCharacteristic.PROPERTY_NOTIFY and properties != 0) {
 
             list.add(TextView(context))
             list.last().text  = "NOTIFY"
@@ -107,7 +98,7 @@ object MyObject {
             list.last().isClickable=true
 
         }
-        if (PROPERTY_INDICATE and properties != 0) {
+        if (BluetoothGattCharacteristic.PROPERTY_INDICATE and properties != 0) {
 
             list.add(TextView(context))
             list.last().text = "INDICATE"
@@ -115,7 +106,7 @@ object MyObject {
             list.last().layoutParams= lparams
             list.last().isClickable=true
         }
-        if (PROPERTY_SIGNED_WRITE and properties != 0) {
+        if (BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE and properties != 0) {
 
             list.add(TextView(context))
             list.last().text  = "SIGNED WRITE"
@@ -123,7 +114,7 @@ object MyObject {
             list.last().layoutParams= lparams
             list.last().isClickable=true
         }
-        if (PROPERTY_EXTENDED_PROPS and properties != 0) {
+        if (BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS and properties != 0) {
 
             list.add(TextView(context))
             list.last().text  = "EXTENDED PROPS"
@@ -141,30 +132,30 @@ object MyObject {
 
         var s = " "
         println("stert.")
-        if (PROPERTY_BROADCAST and properties != 0)
+        if (BluetoothGattCharacteristic.PROPERTY_BROADCAST and properties != 0)
             s += ("BROADCAST ")
 
-        if (PROPERTY_READ and properties != 0)
+        if (BluetoothGattCharacteristic.PROPERTY_READ and properties != 0)
 
             s += "READ "
 
-        if (PROPERTY_WRITE_NO_RESPONSE and properties != 0)
+        if (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE and properties != 0)
 
             s += ("WRITE NO RESPONSE ")
 
-        if (PROPERTY_WRITE and properties != 0)
+        if (BluetoothGattCharacteristic.PROPERTY_WRITE and properties != 0)
             s += ("WRITE ")
 
-        if (PROPERTY_NOTIFY and properties != 0)
+        if (BluetoothGattCharacteristic.PROPERTY_NOTIFY and properties != 0)
             s+=("NOTIFY ")
 
-        if (PROPERTY_INDICATE and properties != 0)
+        if (BluetoothGattCharacteristic.PROPERTY_INDICATE and properties != 0)
             s += ("INDICATE ")
 
-        if (PROPERTY_SIGNED_WRITE and properties != 0)
+        if (BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE and properties != 0)
             s+=("SIGNED_WRITE ")
 
-        if (PROPERTY_EXTENDED_PROPS and properties != 0)
+        if (BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS and properties != 0)
 
             s += ("EXTENDED_PROPS ")
 

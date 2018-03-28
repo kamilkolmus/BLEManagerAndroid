@@ -95,14 +95,20 @@ class FragmentBleServices : Fragment() {
                 } else if (ServiceBle.ACTION_GATT_DISCONNECTED == action) {
                     connected = STATE_DISCONNECTED
 
-                    for(i in 0 until (expanderListAdapter as MyExpanderListAdapter).mLeServices.size){
-                        for (k in 0 until (expanderListAdapter as MyExpanderListAdapter).mLeCharacteristic.get(i).size){
-                            MultiDeviceCharCollectionObserver.removeMultiDeviceCharCollection(Pair(deviceID!!, Pair(i,k)))
+                    try{
+                        for(i in 0 until (expanderListAdapter as MyExpanderListAdapter).mLeServices.size){
+                            for (k in 0 until (expanderListAdapter as MyExpanderListAdapter).mLeCharacteristic.get(i).size){
+                                MultiDeviceCharCollectionObserver.removeMultiDeviceCharCollection(Pair(deviceID!!, Pair(i,k)))
+                            }
                         }
+
+                    }catch (e:NullPointerException){
+                        e.printStackTrace()
+                    }finally {
+                        updateToolbarAction(R.string.connect)
+                        clearUI()
                     }
 
-                    updateToolbarAction(R.string.connect)
-                    clearUI()
                 } else if (ServiceBle.ACTION_GATT_DISCONNECTING == action) {
                     connected = STATE_DISCONNECTING
                     //next onClickAction for toolbartextView ill be connect
@@ -204,19 +210,20 @@ class FragmentBleServices : Fragment() {
                     if(enableUpdateCharValue){
                         enableUpdateCharValue=false
                      //   println("start")
-                        (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
-                        (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).text = (String(data!!)+"\n"+Utils.byteArrayToHex(data))
+                        (expanderListAdapter as MyExpanderListAdapter).getChild(groupPos,childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
+                        (expanderListAdapter as MyExpanderListAdapter).getChild(groupPos,childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).text = (String(data!!)+"\n"+Utils.byteArrayToHex(data))
                         Handler().postDelayed( {
                             enableUpdateCharValue=true
                         },500)
                    //     println("stop")
                     }
                 }else{
-                    (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
-                    (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).text = (String(data!!)+"\n"+Utils.byteArrayToHex(data))
+                    (expanderListAdapter as MyExpanderListAdapter).getChild(groupPos,childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
+                    (expanderListAdapter as MyExpanderListAdapter).getChild(groupPos,childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).text = (String(data!!)+"\n"+Utils.byteArrayToHex(data))
                 }
             }
-            if ((expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<ImageButton>(R.id.ib_graph).getTag() == 1) {
+            //if tag == 1 broadcast data to GraphActivity
+            if ((expanderListAdapter as MyExpanderListAdapter).getChild(groupPos,childPos)!!.findViewById<ImageButton>(R.id.ib_graph).getTag() == 1) {
                 Thread(Runnable {
                     try {
 
@@ -225,8 +232,8 @@ class FragmentBleServices : Fragment() {
                        intent.action = GraphActivity.ACTION_SEND_CHARACTERISTIC_VALUE
                        intent.putExtra(GraphActivity.EXTRA_DEVICE_NAME, deviceName)
                        intent.putExtra(GraphActivity.EXTRA_DEVICE_ADDRESS, deviceAddress)
-                       intent.putExtra(GraphActivity.EXTRA_SERVICE_NAME, (expanderListAdapter as MyExpanderListAdapter).groupViews!!.get(groupPos)!!.findViewById<TextView>(R.id.tv_service_name).text.toString())
-                       intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_NAME, (expanderListAdapter as MyExpanderListAdapter).childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_name).text.toString())
+                       intent.putExtra(GraphActivity.EXTRA_SERVICE_NAME, (expanderListAdapter as MyExpanderListAdapter).getGroup(groupPos)!!.findViewById<TextView>(R.id.tv_service_name).text.toString())
+                       intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_NAME, (expanderListAdapter as MyExpanderListAdapter).getChild(groupPos,childPos)!!.findViewById<TextView>(R.id.tv_characteristic_name).text.toString())
                        intent.putExtra(GraphActivity.EXTRA_DATA, data)
                        intent.putExtra(GraphActivity.EXTRA_SERVICE_INDEX, groupPos)
                        intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_INDEX, childPos)
@@ -293,8 +300,9 @@ class FragmentBleServices : Fragment() {
         val mLeCharacteristic = mLeCharacteristic
         //charValue holds textViews which store the read values of the characteristic.
         //these values are modified externally by Fragment in mGattUpdateReceiver
-        var childViews: HashMap<Pair<Int, Int>, View> = HashMap()
-        var groupViews: HashMap<Int, View> = HashMap()
+        private val childViews: HashMap<Pair<Int, Int>, View> = HashMap()
+        private val groupViews: HashMap<Int, View> = HashMap()
+
 
         override fun getGroupCount(): Int {
             return mLeServices.size
@@ -304,12 +312,12 @@ class FragmentBleServices : Fragment() {
             return mLeCharacteristic!!.get(i).size
         }
 
-        override fun getGroup(i: Int): Any {
-            return mLeCharacteristic!!.get(i)
+        override fun getGroup(i: Int): View? {
+            return groupViews.get(i)
         }
 
-        override fun getChild(groupPos: Int, childPos: Int): Any {
-            return mLeCharacteristic!!.get(groupPos).get(childPos)
+        override fun getChild(groupPos: Int, childPos: Int): View? {
+            return childViews!!.get(Pair(groupPos,childPos))
         }
 
         override fun getGroupId(groupPos: Int): Long {
@@ -336,7 +344,7 @@ class FragmentBleServices : Fragment() {
 
             if(groupViews.contains(groupPos)){
                 //return view from HashMap childViews
-                return groupViews.get(groupPos)!!
+                return getGroup(groupPos)!!
             }else{
 
                 var v = mInflator.inflate(R.layout.expandedlistitem, null)
@@ -363,7 +371,7 @@ class FragmentBleServices : Fragment() {
 
             if(childViews.contains(Pair(groupPos,childPos))){
                 //return view from HashMap childViews
-                return childViews.get(Pair(groupPos,childPos))!!
+                return getChild(groupPos,childPos)!!
             }else{
                 //create new view
                 val v = mInflator.inflate(R.layout.expandedlistitemchild, null)
@@ -385,7 +393,7 @@ class FragmentBleServices : Fragment() {
                         MultiDeviceCharCollectionObserver.addtoMultiDeviceCharCollection(Pair(deviceID!!,Pair(groupPos,childPos)) ,
                                 GraphChrateristicInfo(deviceName!!,groupViews!!.get(groupPos)!!.findViewById<TextView>(R.id.tv_service_name).text.toString(),
                                         childViews!!.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_name).text.toString()))
-                        notifyDataSetChanged()
+                    //    notifyDataSetChanged()
 
                     }else{
 
@@ -394,7 +402,7 @@ class FragmentBleServices : Fragment() {
                         //use Tag to know if data should be broadcast
                         childViewHolder.ibGraph!!.setTag(0)
                         MultiDeviceCharCollectionObserver.removeMultiDeviceCharCollection(Pair(deviceID!!,Pair(groupPos,childPos)))
-                        notifyDataSetChanged()
+                    //    notifyDataSetChanged()
 
                     }
                 })
@@ -408,18 +416,19 @@ class FragmentBleServices : Fragment() {
 
                     childViewHolder.propertiesLinearlayout!!.addView(tv)
                     if(tv.text.toString() == "NOTIFY"||tv.text.toString() == "INDICATE"){ childViewHolder.ibGraph!!.visibility= View.VISIBLE}
-
+                    tv.setTag(Pair(groupPos,childPos))
                     tv.setOnClickListener({ textview ->
-                        tv.startAnimation(AnimationUtils.loadAnimation(context, R.anim.propery_click))
+                        println((textview as TextView).text.toString()+(textview.getTag() as Pair<Int,Int>).first+(textview.getTag() as Pair<Int,Int>).second)
+                        textview.startAnimation(AnimationUtils.loadAnimation(context, R.anim.propery_click))
                         //read textView text
-                        val property = tv.text.toString()
+                        val property = (textview as TextView).text.toString()
                         //onClickAction  depending on the property
                         when (property) {
                             "BROADCAST" -> {
                                 Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
                             }
                             "READ" -> {
-                                serviceBle!!.readCharacteristic(deviceID!!, groupPos, childPos)
+                                serviceBle!!.readCharacteristic(deviceID!!, (textview.getTag() as Pair<Int,Int>).first , (textview.getTag() as Pair<Int,Int>).second)
 
                             }
                             "WRITE NO RESPONSE" -> {
@@ -437,7 +446,7 @@ class FragmentBleServices : Fragment() {
                                 })
                                 builder.setPositiveButton("Send", object : DialogInterface.OnClickListener {
                                     override fun onClick(dialog: DialogInterface?, witch: Int) {
-                                        serviceBle!!.writeCharacteristic(deviceID!!, groupPos, childPos, data.text.toString())
+                                        serviceBle!!.writeCharacteristic(deviceID!!, (textview.getTag() as Pair<Int,Int>).first , (textview.getTag() as Pair<Int,Int>).second, data.text.toString())
                                         //update text hare because no respond from service
                                         childViewHolder.tvCharacteristicValue!!.text = data.text.toString()
                                         dialog!!.dismiss()
@@ -462,7 +471,7 @@ class FragmentBleServices : Fragment() {
                                 })
                                 builder.setPositiveButton("Send", object : DialogInterface.OnClickListener {
                                     override fun onClick(dialog: DialogInterface?, witch: Int) {
-                                        serviceBle!!.writeCharacteristic(deviceID!!, groupPos, childPos, data.text.toString())
+                                        serviceBle!!.writeCharacteristic(deviceID!!, (textview.getTag() as Pair<Int,Int>).first , (textview.getTag() as Pair<Int,Int>).second, data.text.toString())
                                         dialog!!.dismiss()
                                     }
 
@@ -472,27 +481,27 @@ class FragmentBleServices : Fragment() {
 
                             }
                             "NOTIFY" -> {
-                                if(tv.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG>0){
-                                    serviceBle!!.setCharacteristicNotification(deviceID!!, groupPos, childPos, false, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
-                                    tv.setPaintFlags(tv.getPaintFlags() and Paint.STRIKE_THRU_TEXT_FLAG.inv())
+                                if(textview.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG>0){
+                                    serviceBle!!.setCharacteristicNotification(deviceID!!, (textview.getTag() as Pair<Int,Int>).first , (textview.getTag() as Pair<Int,Int>).second, false, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                                    textview.setPaintFlags(textview.getPaintFlags() and Paint.STRIKE_THRU_TEXT_FLAG.inv())
 
 
                                 }else{
-                                    serviceBle!!.setCharacteristicNotification(deviceID!!, groupPos, childPos, true, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
-                                    tv.setPaintFlags(tv.getPaintFlags() or Paint.STRIKE_THRU_TEXT_FLAG)
+                                    serviceBle!!.setCharacteristicNotification(deviceID!!, (textview.getTag() as Pair<Int,Int>).first , (textview.getTag() as Pair<Int,Int>).second, true, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                                    textview.setPaintFlags(textview.getPaintFlags() or Paint.STRIKE_THRU_TEXT_FLAG)
 
 
                                 }
 
                             }
                             "INDICATE" -> {
-                                if(tv.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG>0){
-                                    serviceBle!!.setCharacteristicNotification(deviceID!!, groupPos, childPos, false, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
-                                    tv.setPaintFlags(tv.getPaintFlags() and Paint.STRIKE_THRU_TEXT_FLAG.inv())
+                                if(textview.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG>0){
+                                    serviceBle!!.setCharacteristicNotification(deviceID!!, (textview.getTag() as Pair<Int,Int>).first , (textview.getTag() as Pair<Int,Int>).second, false, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                                    textview.setPaintFlags(textview.getPaintFlags() and Paint.STRIKE_THRU_TEXT_FLAG.inv())
 
                                 }else{
-                                    serviceBle!!.setCharacteristicNotification(deviceID!!, groupPos, childPos, true, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
-                                    tv.setPaintFlags(tv.getPaintFlags() or Paint.STRIKE_THRU_TEXT_FLAG)
+                                    serviceBle!!.setCharacteristicNotification(deviceID!!, (textview.getTag() as Pair<Int,Int>).first , (textview.getTag() as Pair<Int,Int>).second, true, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
+                                    textview.setPaintFlags(textview.getPaintFlags() or Paint.STRIKE_THRU_TEXT_FLAG)
 
                                 }
                             }
@@ -507,11 +516,11 @@ class FragmentBleServices : Fragment() {
                             }
 
                         }
-                        notifyDataSetChanged()
+                     //   notifyDataSetChanged()
                     })
 
                 }
-                //store v in HashMap
+                //store view in HashMap
                 childViews.put(Pair(groupPos,childPos),v)
                 return v
             }

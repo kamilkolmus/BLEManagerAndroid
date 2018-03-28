@@ -202,10 +202,14 @@ class ServiceBle : Service() {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
-        for(serviceIndex in 0 until  mListBleDevices.get(deviceID)!!.mListServices!!.size){
-            for(characteristicIndex in 0 until mListBleDevices.get(deviceID)!!.mListCharacteristic!!.get(serviceIndex).size){
-                setCharacteristicNotification(deviceID,serviceIndex,characteristicIndex,false,DISABLE_NOTIFICATION_VALUE)
+        try {
+            for (serviceIndex in 0 until mListBleDevices.get(deviceID)!!.mListServices!!.size) {
+                for (characteristicIndex in 0 until mListBleDevices.get(deviceID)!!.mListCharacteristic!!.get(serviceIndex).size) {
+                    setCharacteristicNotification(deviceID, serviceIndex, characteristicIndex, false, DISABLE_NOTIFICATION_VALUE)
+                }
             }
+        }catch (e:NullPointerException){
+            e.printStackTrace()
         }
 
         mListBleDevices.get(deviceID)!!.bluetoothGatt!!.disconnect()

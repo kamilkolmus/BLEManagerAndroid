@@ -21,7 +21,7 @@
 
         <TextView
 
-            android:background="@color/color1"
+            android:background="@color/colorGrey"
             android:paddingStart="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -30,7 +30,7 @@
             tools:ignore="RtlSymmetry" />
         <TextView
 
-            android:background="@color/color1"
+            android:background="@color/colorGrey"
             android:paddingStart="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -42,6 +42,7 @@
 
                 android:layout_gravity="center_horizontal"
                 android:id="@+id/plot"
+
                 android:layout_width="match_parent"
                 android:layout_height="400dp"
                 android:background="@color/ap_transparent"
@@ -57,7 +58,7 @@
                 android:layout_marginBottom="6dp"
 
                 androidplot:androidplot.renderMode="use_background_thread"
-                style="@style/APDefacto.Transpatent"
+                style="@style/APDefacto.Transparent"
                 ap:gridClippingEnabled="false"
                 ap:legendVisible="true"
                 ap:lineLabelTextSizeLeft="5dp"
@@ -73,14 +74,16 @@
 
                 ap:lineLabelInsetBottom="-10dp"
                 ap:gridInsetLeft="10dp"
-                ap:lineLabelInsetLeft="15dp"
-                ap:gridInsetBottom="0dp"/>
+                app:lineLabelInsetLeft="9dp"
+                ap:gridInsetBottom="0dp"
+                app:backgroundColor="@color/ap_transparent"
+                />
 
 
 
         <TextView
 
-            android:background="@color/color1"
+            android:background="@color/colorGrey"
             android:paddingStart="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -89,7 +92,7 @@
             />
         <TextView
 
-            android:background="@color/color1"
+            android:background="@color/colorGrey"
             android:paddingStart="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

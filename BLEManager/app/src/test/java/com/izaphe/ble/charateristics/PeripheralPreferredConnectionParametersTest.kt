@@ -1,4 +1,4 @@
-package com.izaphe.ble.service.genericaccess
+package com.izaphe.ble.charateristics
 
 import com.izaphe.ble.utils.BleCharacteristicInitializer
 import org.junit.Test
@@ -18,7 +18,7 @@ class PeripheralPreferredConnectionParametersTest {
                 "Maximum Connection Interval: "+6*1.25+"ms\n"+
                 "Slave Latency: "+6+"ms\n"+
                 "Connection Supervision Timeout Multiplier: "+10+"ms\n",
-                charateristic.getValue())
+                charateristic.getValueAsString())
 
     }
 }

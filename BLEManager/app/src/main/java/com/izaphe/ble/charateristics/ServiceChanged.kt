@@ -1,10 +1,7 @@
-package com.izaphe.ble.service.genericattribute
+package com.izaphe.ble.charateristics
 
-import com.izaphe.ble.service.AbstractBleCharacteristic
+import com.izaphe.ble.charateristics.abstractcharateristic.AbstractBleCharacteristic
 import com.izaphe.ble.utils.BleUtils
-import unsigned.toUshort
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 
 /**
@@ -16,11 +13,13 @@ class ServiceChanged : AbstractBleCharacteristic() {
 
 
 
-    override fun getValue():String {
+    override fun getValueAsString():String {
 
-
+        if(packet==null){
+            return "Unknown"
+        }
         if(packet.size<4){
-            return "Not specified"
+            return "Not Specified"
         }
 
         val StartOfAffectedAttributeHandleRange=BleUtils.bytesToUnsignedShort(packet[0],packet[1])
@@ -30,6 +29,10 @@ class ServiceChanged : AbstractBleCharacteristic() {
         }
         return "Start of Affected Attribute Handle Range ="+StartOfAffectedAttributeHandleRange+", Stop of Affected Attribute Handle Range ="+StopOfAffectedAttributeHandleRange
 
+    }
+
+    override fun getValueAsDouble(): Double? {
+       return null
     }
 
 

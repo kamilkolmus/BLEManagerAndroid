@@ -297,156 +297,6 @@ object BleUtils {
 
 
 
-
-    fun getPropertiesTextViews(properties: Int, context: Context): ArrayList<TouchableTextView> {
-
-
-        val list: ArrayList<TouchableTextView> = ArrayList()
-        var lparams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT)
-        lparams.setMargins(12,0,10,0)
-
-
-
-        if (BluetoothGattCharacteristic.PROPERTY_BROADCAST and properties != 0) {
-
-            list.add(TouchableTextView(context))
-            list.last().text  = "BROADCAST"
-            list.last().typeface= Typeface.DEFAULT_BOLD
-            list.last().layoutParams= lparams
-            list.last().isClickable=true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                list.last().focusable= View.FOCUSABLE
-            }
-
-        }
-        if (BluetoothGattCharacteristic.PROPERTY_READ and properties != 0) {
-
-            list.add(TouchableTextView(context))
-            list.last().text  = "READ"
-            list.last().typeface= Typeface.DEFAULT_BOLD
-            list.last().layoutParams= lparams
-            list.last().isClickable=true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                list.last().focusable= View.FOCUSABLE
-            }
-
-        }
-        if (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE and properties != 0) {
-
-            list.add(TouchableTextView(context))
-            list.last().text = "WRITE NO RESPONSE"
-            list.last().typeface= Typeface.DEFAULT_BOLD
-            list.last().layoutParams= lparams
-            list.last().isClickable=true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                list.last().focusable= View.FOCUSABLE
-            }
-
-        }
-        if (BluetoothGattCharacteristic.PROPERTY_WRITE and properties != 0) {
-
-            list.add(TouchableTextView(context))
-            list.last().text  = "WRITE"
-            list.last().typeface= Typeface.DEFAULT_BOLD
-            list.last().layoutParams= lparams
-            list.last().isClickable=true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                list.last().focusable= View.FOCUSABLE
-            }
-
-
-        }
-        if (BluetoothGattCharacteristic.PROPERTY_NOTIFY and properties != 0) {
-
-            list.add(TouchableTextView(context))
-            list.last().text  = "NOTIFY"
-            list.last().typeface= Typeface.DEFAULT_BOLD
-            list.last().layoutParams= lparams
-            list.last().isClickable=true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                list.last().focusable= View.FOCUSABLE
-            }
-
-
-        }
-        if (BluetoothGattCharacteristic.PROPERTY_INDICATE and properties != 0) {
-
-            list.add(TouchableTextView(context))
-            list.last().text = "INDICATE"
-            list.last().typeface= Typeface.DEFAULT_BOLD
-            list.last().layoutParams= lparams
-            list.last().isClickable=true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                list.last().focusable= View.FOCUSABLE
-            }
-
-        }
-        if (BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE and properties != 0) {
-
-            list.add(TouchableTextView(context))
-            list.last().text  = "SIGNED WRITE"
-            list.last().typeface= Typeface.DEFAULT_BOLD
-            list.last().layoutParams= lparams
-            list.last().isClickable=true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                list.last().focusable= View.FOCUSABLE
-            }
-
-        }
-        if (BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS and properties != 0) {
-
-            list.add(TouchableTextView(context))
-            list.last().text  = "EXTENDED PROPS"
-            list.last().typeface= Typeface.DEFAULT_BOLD
-            list.last().layoutParams= lparams
-            list.last().isClickable=true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                list.last().focusable= View.FOCUSABLE
-            }
-
-        }
-
-        return list
-
-    }
-
-
-    fun getProperties(properties: Int): String {
-
-        var s = " "
-        if (BluetoothGattCharacteristic.PROPERTY_BROADCAST and properties != 0)
-            s += ("BROADCAST ")
-
-        if (BluetoothGattCharacteristic.PROPERTY_READ and properties != 0)
-
-            s += "READ "
-
-        if (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE and properties != 0)
-
-            s += ("WRITE NO RESPONSE ")
-
-        if (BluetoothGattCharacteristic.PROPERTY_WRITE and properties != 0)
-            s += ("WRITE ")
-
-        if (BluetoothGattCharacteristic.PROPERTY_NOTIFY and properties != 0)
-            s+=("NOTIFY ")
-
-        if (BluetoothGattCharacteristic.PROPERTY_INDICATE and properties != 0)
-            s += ("INDICATE ")
-
-        if (BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE and properties != 0)
-            s+=("SIGNED_WRITE ")
-
-        if (BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS and properties != 0)
-
-            s += ("EXTENDED_PROPS ")
-
-
-        return s
-
-    }
-
     fun byteArrayToHex(a: ByteArray): String {
         val sb = StringBuilder(a.size * 2)
         for (b in a) {
@@ -459,9 +309,19 @@ object BleUtils {
 
      fun bytesToUnsignedShort(byte1 : Byte, byte2 : Byte) : Int {
 
-        //litlle andian
+        //little andian
         return (((byte2.toInt() and 255) shl 8) or (byte1.toInt() and 255))
 
+    }
+
+    fun round(value: Double, places: Int): Double {
+        var value = value
+        if (places < 0) throw IllegalArgumentException()
+
+        val factor = Math.pow(10.0, places.toDouble()).toLong()
+        value = value * factor
+        val tmp = Math.round(value)
+        return tmp.toDouble() / factor
     }
 
 

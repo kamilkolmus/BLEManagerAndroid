@@ -1,6 +1,6 @@
-package  com.izaphe.ble.service.genericaccess
+package  com.izaphe.ble.charateristics
 
-import com.izaphe.ble.service.AbstractBleCharacteristic
+import com.izaphe.ble.charateristics.abstractcharateristic.AbstractBleCharacteristic
 
 
 /**
@@ -9,13 +9,13 @@ import com.izaphe.ble.service.AbstractBleCharacteristic
 class PeripheralPrivacyFlag : AbstractBleCharacteristic() {
     override lateinit var packet: ByteArray
 
-    override fun getValue(): String {
+    override fun getValueAsString(): String {
 
         if(packet==null){
             return "Unknown"
         }
         if (packet.isEmpty()){
-            return "Not specified"
+            return "Not Specified"
         }
 
         if(0 == packet[0].toInt()){
@@ -25,6 +25,16 @@ class PeripheralPrivacyFlag : AbstractBleCharacteristic() {
 
     }
 
+    override fun getValueAsDouble(): Double? {
+        if(packet==null){
+            return null
+        }
+        if (packet.isEmpty()){
+            return null
+        }
+
+        return packet[0].toDouble()
+    }
 
 
 

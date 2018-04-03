@@ -6,7 +6,7 @@ import java.util.HashMap
 
 
 
-object MultiDeviceCharCollectionObserver {
+object MultiDeviceCharCollection {
 
     //common collection storing information about the characteristics
     //fragmentBleService can add information here

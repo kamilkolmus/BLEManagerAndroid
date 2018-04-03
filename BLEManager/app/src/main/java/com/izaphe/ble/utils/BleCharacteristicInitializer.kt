@@ -1,14 +1,9 @@
 package com.izaphe.ble.utils
 
 
-import com.izaphe.ble.service.*
-import com.izaphe.ble.service.genericaccess.Appearance
-import com.izaphe.ble.service.genericaccess.DeviceName
-import com.izaphe.ble.service.genericaccess.PeripheralPreferredConnectionParameters
-import com.izaphe.ble.service.genericaccess.ReconnectionAddress
-import com.izaphe.ble.service.genericattribute.ServiceChanged
-import com.izaphe.ble.service.healththermometer.TemperatureMeasurement
-import com.izaphe.ble.service.heartrate.HeartRateMeasurement
+import com.izaphe.ble.charateristics.*
+import com.izaphe.ble.charateristics.abstractcharateristic.AbstractBleCharacteristic
+
 
 
 /**
@@ -20,13 +15,13 @@ object BleCharacteristicInitializer{
         return when (UUID) {
             "00002a00-0000-1000-8000-00805f9b34fb" -> DeviceName()
             "00002a01-0000-1000-8000-00805f9b34fb" -> Appearance()
-            "00002a02-0000-1000-8000-00805f9b34fb" -> null
+            "00002a02-0000-1000-8000-00805f9b34fb" -> PeripheralPrivacyFlag()
             "00002a03-0000-1000-8000-00805f9b34fb" -> ReconnectionAddress()
             "00002a04-0000-1000-8000-00805f9b34fb" -> PeripheralPreferredConnectionParameters()
             "00002a05-0000-1000-8000-00805f9b34fb" -> ServiceChanged()
             "00002a06-0000-1000-8000-00805f9b34fb" -> null
             "00002a07-0000-1000-8000-00805f9b34fb" -> null
-            "00002a08-0000-1000-8000-00805f9b34fb" -> null
+            "00002a08-0000-1000-8000-00805f9b34fb" -> DateTime()
             "00002a09-0000-1000-8000-00805f9b34fb" -> null
             "00002a0a-0000-1000-8000-00805f9b34fb" -> null
             "00002a0b-0000-1000-8000-00805f9b34fb" -> null
@@ -47,11 +42,11 @@ object BleCharacteristicInitializer{
             "00002a1a-0000-1000-8000-00805f9b34fb" -> null
             "00002a1b-0000-1000-8000-00805f9b34fb" -> null
             "00002a1c-0000-1000-8000-00805f9b34fb" -> TemperatureMeasurement()
-            "00002a1d-0000-1000-8000-00805f9b34fb" -> null
-            "00002a1e-0000-1000-8000-00805f9b34fb" -> null
+            "00002a1d-0000-1000-8000-00805f9b34fb" -> TemperatureType()
+            "00002a1e-0000-1000-8000-00805f9b34fb" -> IntermediateTemperature()
             "00002a1f-0000-1000-8000-00805f9b34fb" -> null
             "00002a20-0000-1000-8000-00805f9b34fb" -> null
-            "00002a21-0000-1000-8000-00805f9b34fb" -> null
+            "00002a21-0000-1000-8000-00805f9b34fb" -> MeasurementInterval()
             "00002a22-0000-1000-8000-00805f9b34fb" -> null
             "00002a23-0000-1000-8000-00805f9b34fb" -> null
             "00002a24-0000-1000-8000-00805f9b34fb" -> null
@@ -72,8 +67,8 @@ object BleCharacteristicInitializer{
             "00002a35-0000-1000-8000-00805f9b34fb" -> null
             "00002a36-0000-1000-8000-00805f9b34fb" -> null
             "00002a37-0000-1000-8000-00805f9b34fb" -> HeartRateMeasurement()
-            "00002a38-0000-1000-8000-00805f9b34fb" -> null
-            "00002a39-0000-1000-8000-00805f9b34fb" -> null
+            "00002a38-0000-1000-8000-00805f9b34fb" -> BodySensorLocation()
+            "00002a39-0000-1000-8000-00805f9b34fb" -> HeartRateControlPoint()
             "00002a3a-0000-1000-8000-00805f9b34fb" -> null
             "00002a3b-0000-1000-8000-00805f9b34fb" -> null
             "00002a3c-0000-1000-8000-00805f9b34fb" -> null

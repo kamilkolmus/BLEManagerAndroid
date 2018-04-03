@@ -15,6 +15,7 @@ import com.izaphe.blemanager.myinterfaces.DialogGraphSettingsInterface
 
 
 class DialogGraphSettings(context: Context?, dialogGraphSettingsInterface: DialogGraphSettingsInterface, historySize:Int) : Dialog(context) {
+
     var dialogGraphSettingsInterface =dialogGraphSettingsInterface
     var historySize:Int=historySize
 

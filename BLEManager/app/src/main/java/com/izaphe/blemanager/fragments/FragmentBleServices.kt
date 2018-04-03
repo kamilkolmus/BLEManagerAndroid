@@ -1,4 +1,3 @@
-
 package com.izaphe.blemanager.fragments
 
 
@@ -26,14 +25,16 @@ import kotlinx.android.synthetic.main.fragment_ble_services.*
 import android.widget.RelativeLayout
 import android.widget.RelativeLayout.LayoutParams
 import com.i7xaphe.blemanager.R
-import com.izaphe.ble.service.AbstractBleCharacteristic
+import com.izaphe.ble.charateristics.abstractcharateristic.AbstractBleCharacteristic
+
 import com.izaphe.ble.utils.BleCharacteristicInitializer
 import com.izaphe.ble.utils.BleUtils
 import com.izaphe.blemanager.activities.GraphActivity
 import com.izaphe.blemanager.activities.MainActivity
 import com.izaphe.blemanager.ble.BleChrateristicInfo
 import com.izaphe.blemanager.ble.BleDevice
-import com.izaphe.blemanager.ble.MultiDeviceCharCollectionObserver
+import com.izaphe.blemanager.ble.MultiDeviceCharCollection
+import com.izaphe.blemanager.ble.Utils.getPropertiesTextViews
 import com.izaphe.blemanager.myinterfaces.MyOnChildClickListener
 import com.izaphe.blemanager.services.ServiceBle
 import com.izaphe.blemanager.views.TouchableImageButton
@@ -90,16 +91,16 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
                 } else if (ServiceBle.ACTION_GATT_DISCONNECTED == action) {
                     connected = STATE_DISCONNECTED
 
-                    try{
-                        for(i in 0 until (expanderListAdapter as MyExpanderListAdapter).mLeServices.size){
-                            for (k in 0 until (expanderListAdapter as MyExpanderListAdapter).mLeCharacteristic.get(i).size){
-                                MultiDeviceCharCollectionObserver.removeMultiDeviceCharCollection(Pair(deviceID!!, Pair(i,k)))
+                    try {
+                        for (i in 0 until (expanderListAdapter as MyExpanderListAdapter).mLeServices.size) {
+                            for (k in 0 until (expanderListAdapter as MyExpanderListAdapter).mLeCharacteristic.get(i).size) {
+                                MultiDeviceCharCollection.removeMultiDeviceCharCollection(Pair(deviceID!!, Pair(i, k)))
                             }
                         }
 
-                    }catch (e:NullPointerException){
+                    } catch (e: NullPointerException) {
                         e.printStackTrace()
-                    }finally {
+                    } finally {
                         updateToolbarAction(R.string.connect)
                         clearUI()
                     }
@@ -113,13 +114,13 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
                     // Show all the supported services and characteristics on the user interface.
                     displayGattServices(serviceBle!!.getBluetoothDevice(deviceID!!))
                 } else if (ServiceBle.ACTION_DATA_AVAILABLE == action) {
-            //        Log.i(TAG, "ACTION_DATA_AVAILABLE onReceive")
-                    val type=intent.extras.getString(ServiceBle.EXTRA_ACTION_TYPE)
+                    //        Log.i(TAG, "ACTION_DATA_AVAILABLE onReceive")
+                    val type = intent.extras.getString(ServiceBle.EXTRA_ACTION_TYPE)
                     displayData(intent.getByteArrayExtra(ServiceBle.EXTRA_CHARATERISTIC_DATA),
                             //service index informs which service incoming data belongs to
                             intent.getIntExtra(ServiceBle.EXTRA_SERVICE_INDEX, 0),
                             //characteristic index informs which characteristic incoming data belongs to
-                            intent.getIntExtra(ServiceBle.EXTRA_CHARATERISTIC_INDEX, 0),type)
+                            intent.getIntExtra(ServiceBle.EXTRA_CHARATERISTIC_INDEX, 0), type)
                 }
             }
 
@@ -156,7 +157,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
         ib_close.setOnClickListener({
             ib_close.startAnimation(AnimationUtils.loadAnimation(context, R.anim.propery_click))
 
-      //      (activity as MainActivity).closeTab(tabIndex!!)
+            //      (activity as MainActivity).closeTab(tabIndex!!)
         })
 
         //Bind service
@@ -171,7 +172,6 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
     }
 
 
-
     override fun onResume() {
         super.onResume()
         activity.registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter())
@@ -182,9 +182,9 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
     //can be use externally  by activity
     fun connect(): Boolean {
 
-        if(serviceBle!=null){
+        if (serviceBle != null) {
             return serviceBle!!.connect(deviceAddress, deviceID!!)
-        }else{
+        } else {
             val gattServiceIntent = Intent(context, ServiceBle::class.java)
             gattServiceIntent.action = tabIndex.toString()
             if (activity.bindService(gattServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE)) {
@@ -210,32 +210,40 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
     }
 
 
-    private fun displayData(data: ByteArray?, groupPos: Int, childPos: Int,type:String?) {
+    private fun displayData(data: ByteArray?, groupPos: Int, childPos: Int, type: String?) {
 
         try {
-            (expanderListAdapter as MyExpanderListAdapter).updateCharateristicValue(groupPos,childPos,data!!)
+            (expanderListAdapter as MyExpanderListAdapter).updateCharateristicValue(groupPos, childPos, data!!)
+            Thread(Runnable {
+                if ((expanderListAdapter as MyExpanderListAdapter).getChild(groupPos, childPos)!!.findViewById<ImageButton>(R.id.ib_graph).tag == 1) {
 
-            if ((expanderListAdapter as MyExpanderListAdapter).getChild(groupPos,childPos)!!.findViewById<ImageButton>(R.id.ib_graph).tag == 1) {
-                Thread(Runnable {
                     try {
-                       val intent = Intent()
-                       intent.action = GraphActivity.ACTION_SEND_CHARACTERISTIC_VALUE
-                       intent.putExtra(GraphActivity.EXTRA_DEVICE_NAME, deviceName)
-                       intent.putExtra(GraphActivity.EXTRA_DEVICE_ADDRESS, deviceAddress)
-                       intent.putExtra(GraphActivity.EXTRA_SERVICE_NAME, (expanderListAdapter as MyExpanderListAdapter).getGroup(groupPos)!!.findViewById<TextView>(R.id.tv_interpret).text.toString())
-                       intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_NAME, (expanderListAdapter as MyExpanderListAdapter).getChild(groupPos,childPos)!!.findViewById<TextView>(R.id.tv_characteristic_name).text.toString())
-                       intent.putExtra(GraphActivity.EXTRA_DATA, data)
-                       intent.putExtra(GraphActivity.EXTRA_SERVICE_INDEX, groupPos)
-                       intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_INDEX, childPos)
-                       intent.putExtra(GraphActivity.EXTRA_DEVICE_ID, deviceID)
-                       (activity as MainActivity).sendBroadcast(intent)
-                    }catch (e:ClassCastException){
+                        val intent = Intent()
+                        intent.action = GraphActivity.ACTION_SEND_CHARACTERISTIC_VALUE
+                        intent.putExtra(GraphActivity.EXTRA_DEVICE_NAME, deviceName)
+                        intent.putExtra(GraphActivity.EXTRA_DEVICE_ADDRESS, deviceAddress)
+                        intent.putExtra(GraphActivity.EXTRA_SERVICE_NAME, (expanderListAdapter as MyExpanderListAdapter).getGroup(groupPos)!!.findViewById<TextView>(R.id.tv_interpret).text.toString())
+                        intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_NAME, (expanderListAdapter as MyExpanderListAdapter).getChild(groupPos, childPos)!!.findViewById<TextView>(R.id.tv_characteristic_name).text.toString())
+                        intent.putExtra(GraphActivity.EXTRA_SERVICE_INDEX, groupPos)
+                        intent.putExtra(GraphActivity.EXTRA_CHARACTERISTIC_INDEX, childPos)
+                        intent.putExtra(GraphActivity.EXTRA_DEVICE_ID, deviceID)
+                        val dataAsDouble=(expanderListAdapter as MyExpanderListAdapter).getCharateristicValueAsDouble(groupPos,childPos,data)
+                        if(dataAsDouble==null){
+                            //put data as ByteArray
+                            intent.putExtra(GraphActivity.EXTRA_DATA, data)
+                        }else{
+                            //put data as Double
+                            intent.putExtra(GraphActivity.EXTRA_DATA, dataAsDouble)
+                        }
+                        (activity as MainActivity).sendBroadcast(intent)
+                    } catch (e: ClassCastException) {
                         e.printStackTrace()
                     }
-                }).start()
-            }
-           // (expanderListAdapter as MyExpanderListAdapter).notifyDataSetChanged()
-        }catch (e:Exception){
+
+                }
+            }).start()
+            // (expanderListAdapter as MyExpanderListAdapter).notifyDataSetChanged()
+        } catch (e: Exception) {
             e.printStackTrace()
         }
 
@@ -244,7 +252,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
 
     // Display gattServices and gattCharacteristics in ExpandedListView
     private fun displayGattServices(bleDevice: BleDevice) {
-        expanderListAdapter = MyExpanderListAdapter(context, bleDevice.mListServices!!, bleDevice.mListCharacteristic,this)
+        expanderListAdapter = MyExpanderListAdapter(context, bleDevice.mListServices!!, bleDevice.mListCharacteristic, this)
         gatt_services_list!!.setAdapter(expanderListAdapter)
     }
 
@@ -259,12 +267,10 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
     }
 
 
+    override fun onChildClick(v: View?, groupPosition: Int, childPosition: Int, Id: Long?, property: String?) {
+        Log.i("onChildClick", "" + groupPosition + childPosition + id)
 
-
-    override fun onChildClick(v:View?,groupPosition: Int, childPosition: Int, Id: Long?, property: String?) {
-        Log.i("onChildClick",""+groupPosition+childPosition+id)
-
-        if(v==null){
+        if (v == null) {
             return
         }
         v.startAnimation(AnimationUtils.loadAnimation(context, R.anim.propery_click))
@@ -273,7 +279,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
                 Toast.makeText(context, "PROPERTY NOT IMPLEMENTED YET", Toast.LENGTH_SHORT).show()
             }
             "READ" -> {
-                serviceBle!!.readCharacteristic(deviceID!!, (v.tag as Pair<Int,Int>).first , (v.tag as Pair<Int,Int>).second)
+                serviceBle!!.readCharacteristic(deviceID!!, (v.tag as Pair<Int, Int>).first, (v.tag as Pair<Int, Int>).second)
 
             }
             "WRITE NO RESPONSE" -> {
@@ -291,7 +297,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
                 })
                 builder.setPositiveButton("Send", object : DialogInterface.OnClickListener {
                     override fun onClick(dialog: DialogInterface?, witch: Int) {
-                        serviceBle!!.writeCharacteristic(deviceID!!, (v.tag as Pair<Int,Int>).first , (v.tag as Pair<Int,Int>).second, data.text.toString())
+                        serviceBle!!.writeCharacteristic(deviceID!!, (v.tag as Pair<Int, Int>).first, (v.tag as Pair<Int, Int>).second, data.text.toString())
                         //update text hare because no respond from service
                         // childViewHolder.tvCharacteristicValue!!.text = data.text.toString()
                         dialog!!.dismiss()
@@ -316,7 +322,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
                 })
                 builder.setPositiveButton("Send", object : DialogInterface.OnClickListener {
                     override fun onClick(dialog: DialogInterface?, witch: Int) {
-                        serviceBle!!.writeCharacteristic(deviceID!!, (v.tag as Pair<Int,Int>).first , (v.tag as Pair<Int,Int>).second, data.text.toString())
+                        serviceBle!!.writeCharacteristic(deviceID!!, (v.tag as Pair<Int, Int>).first, (v.tag as Pair<Int, Int>).second, data.text.toString())
                         dialog!!.dismiss()
                     }
 
@@ -325,25 +331,25 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
 
             }
             "NOTIFY" -> {
-                if((v as TextView).paintFlags and Paint.STRIKE_THRU_TEXT_FLAG>0){
-                    serviceBle!!.setCharacteristicNotification(deviceID!!, (v.getTag() as Pair<Int,Int>).first , (v.getTag() as Pair<Int,Int>).second, false, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                if ((v as TextView).paintFlags and Paint.STRIKE_THRU_TEXT_FLAG > 0) {
+                    serviceBle!!.setCharacteristicNotification(deviceID!!, (v.getTag() as Pair<Int, Int>).first, (v.getTag() as Pair<Int, Int>).second, false, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
                     v.paintFlags = v.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
 
 
-                }else{
-                    serviceBle!!.setCharacteristicNotification(deviceID!!, (v.getTag() as Pair<Int,Int>).first , (v.getTag() as Pair<Int,Int>).second, true, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                } else {
+                    serviceBle!!.setCharacteristicNotification(deviceID!!, (v.getTag() as Pair<Int, Int>).first, (v.getTag() as Pair<Int, Int>).second, true, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
                     v.paintFlags = v.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
 
                 }
 
             }
             "INDICATE" -> {
-                if((v as TextView).paintFlags and Paint.STRIKE_THRU_TEXT_FLAG>0){
-                    serviceBle!!.setCharacteristicNotification(deviceID!!, (v.getTag() as Pair<Int,Int>).first , (v.getTag() as Pair<Int,Int>).second, false, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                if ((v as TextView).paintFlags and Paint.STRIKE_THRU_TEXT_FLAG > 0) {
+                    serviceBle!!.setCharacteristicNotification(deviceID!!, (v.getTag() as Pair<Int, Int>).first, (v.getTag() as Pair<Int, Int>).second, false, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
                     v.paintFlags = v.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
 
-                }else{
-                    serviceBle!!.setCharacteristicNotification(deviceID!!, (v.getTag() as Pair<Int,Int>).first , (v.getTag() as Pair<Int,Int>).second, true, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
+                } else {
+                    serviceBle!!.setCharacteristicNotification(deviceID!!, (v.getTag() as Pair<Int, Int>).first, (v.getTag() as Pair<Int, Int>).second, true, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
                     v.paintFlags = v.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
 
                 }
@@ -370,7 +376,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
         // propertiesLinearlayout holds dynamically added clickable characteristic properties
         var propertiesLinearlayout: LinearLayout? = null
         // tvCharacteristicValue holds characteristic value
-        var tvCharacteristicValue:TextView? = null
+        var tvCharacteristicValue: TextView? = null
         // tvCharacteristicValue holds characteristic value
         var ibGraph: TouchableImageButton? = null
 
@@ -380,11 +386,11 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
     private inner class MyExpanderListAdapter(context: Context,
                                               mLeServices: List<BluetoothGattService>,
                                               mLeCharacteristic: ArrayList<List<BluetoothGattCharacteristic>>,
-                                              listener:MyOnChildClickListener) : BaseExpandableListAdapter() {
+                                              listener: MyOnChildClickListener) : BaseExpandableListAdapter() {
 
         private var context: Context = context
         private val mInflator: LayoutInflater = this@FragmentBleServices.layoutInflater
-        private val listener=listener
+        private val listener = listener
         //List  of available service
         val mLeServices = mLeServices
         // list of ArrayList of available characteristic
@@ -409,7 +415,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
         }
 
         override fun getChild(groupPos: Int, childPos: Int): View? {
-            return childViews.get(Pair(groupPos,childPos))
+            return childViews.get(Pair(groupPos, childPos))
         }
 
         override fun getGroupId(groupPos: Int): Long {
@@ -418,10 +424,10 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
         }
 
         override fun getChildId(groupPos: Int, childPos: Int): Long {
-            try{
-                return (" "+groupPos+childPos+childViews.get(Pair(groupPos,childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).text.toString()).hashCode().toLong()
-            }catch (e:NullPointerException){
-                return  (" "+groupPos+childPos).hashCode().toLong()
+            try {
+                return (" " + groupPos + childPos + childViews.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_value).text.toString()).hashCode().toLong()
+            } catch (e: NullPointerException) {
+                return (" " + groupPos + childPos).hashCode().toLong()
             }
         }
 
@@ -434,10 +440,10 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
         override fun getGroupView(groupPos: Int, p1: Boolean, view: View?, p3: ViewGroup?): View {
 
 
-            if(groupViews.contains(groupPos)){
+            if (groupViews.contains(groupPos)) {
                 //return view from HashMap childViews
                 return getGroup(groupPos)!!
-            }else{
+            } else {
 
                 var v = mInflator.inflate(R.layout.list_item_expanded_list_group, null)
                 val groupViewHolder: FragmentBleServices.GroupViewHolder
@@ -448,7 +454,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
                 groupViewHolder.serviceName!!.text = BleUtils.getServiceName(mLeServices.get(groupPos).uuid.toString())
                 groupViewHolder.serviceUUID!!.text = "UUID: " + BleUtils.UIIDFilter(mLeServices.get(groupPos).uuid.toString())
                 groupViewHolder.serviceType!!.text = if (mLeServices.get(groupPos).type == 0) getString(R.string.primary_srvice) else getString(R.string.secondary_service)
-                groupViews.put(groupPos,v)
+                groupViews.put(groupPos, v)
                 return v
 
             }
@@ -461,10 +467,10 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
 
             println("getChildView $groupPos $childPos")
 
-            if(childViews.contains(Pair(groupPos,childPos))){
+            if (childViews.contains(Pair(groupPos, childPos))) {
                 //return view from HashMap childViews
-                return getChild(groupPos,childPos)!!
-            }else{
+                return getChild(groupPos, childPos)!!
+            } else {
                 //create new view
 
                 val v = mInflator.inflate(R.layout.list_item_expanded_list_child, null)
@@ -481,21 +487,24 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
                 childViewHolder.ibGraph!!.setOnClickListener({
 
                 })
-                childViewHolder.ibGraph!!.setOnTouchListener(View.OnTouchListener({view, motionEvent ->
+                childViewHolder.ibGraph!!.setOnTouchListener(View.OnTouchListener({ view, motionEvent ->
 
 
-                    if(motionEvent.action == MotionEvent.ACTION_DOWN) {
-                        view.startAnimation(AnimationUtils.loadAnimation(context,R.anim.propery_click))
+                    if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+                        view.startAnimation(AnimationUtils.loadAnimation(context, R.anim.propery_click))
                         if (Integer.parseInt((view as ImageButton).tag.toString()) == 0) {
                             view.setImageResource(R.drawable.graph_icon_strike)
                             view.setTag(R.drawable.graph_icon_strike)
                             //use Tag to know if data should be broadcast
                             //broadcast data
                             view.setTag(1)
-                            MultiDeviceCharCollectionObserver.addtoMultiDeviceCharCollection(Pair(deviceID!!, Pair(groupPos, childPos)),
-                                    BleChrateristicInfo(deviceName!!, groupViews.get(groupPos)!!.findViewById<TextView>(R.id.tv_interpret).text.toString(),
-                                            childViews.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_name).text.toString(),
-                                            BleUtils.UIIDFilter(mLeCharacteristic.get(groupPos).get(childPos).uuid.toString())))
+
+                            val UUID=BleUtils.UIIDFilter(mLeCharacteristic.get(groupPos).get(childPos).uuid.toString())
+                            val standardCharacteristic= UUID.length==4
+                            val characteristicName= childViews.get(Pair(groupPos, childPos))!!.findViewById<TextView>(R.id.tv_characteristic_name).text.toString()
+                            val characteristicIndex=Pair(groupPos, childPos)
+                            val characteristicInfo=BleChrateristicInfo(deviceName!!,characteristicName,UUID,standardCharacteristic)
+                            MultiDeviceCharCollection.addtoMultiDeviceCharCollection(Pair(deviceID!!,characteristicIndex),characteristicInfo)
                             //    notifyDataSetChanged()
 
                         } else {
@@ -504,7 +513,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
                             view.tag = R.drawable.graph_icon
                             //use Tag to know if data should be broadcast
                             view.tag = 0
-                            MultiDeviceCharCollectionObserver.removeMultiDeviceCharCollection(Pair(deviceID!!, Pair(groupPos, childPos)))
+                            MultiDeviceCharCollection.removeMultiDeviceCharCollection(Pair(deviceID!!, Pair(groupPos, childPos)))
                             //    notifyDataSetChanged()
 
                         }
@@ -519,23 +528,25 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
 
                 childViewHolder.propertiesLinearlayout = v.findViewById(R.id.ll_properties)
 
-                val packetConverter: AbstractBleCharacteristic?= BleCharacteristicInitializer.getCharacteristicObject(mLeCharacteristic.get(groupPos).get(childPos).uuid.toString())
+                val packetConverter: AbstractBleCharacteristic? = BleCharacteristicInitializer.getCharacteristicObject(mLeCharacteristic.get(groupPos).get(childPos).uuid.toString())
 
-                packetConverters.put(Pair(groupPos,childPos), packetConverter)
+                packetConverters.put(Pair(groupPos, childPos), packetConverter)
 
 
                 //dynamically added clickable textViews that correspond to the properties of characteristic
-                for (tv in BleUtils.getPropertiesTextViews(mLeCharacteristic.get(groupPos).get(childPos).properties, context)) {
+                for (tv in getPropertiesTextViews(mLeCharacteristic.get(groupPos).get(childPos).properties, context)) {
 
-                    if(tv.text.toString() == "NOTIFY"||tv.text.toString() == "INDICATE"){ childViewHolder.ibGraph!!.visibility= View.VISIBLE}
-                    tv.tag = Pair(groupPos,childPos)
+                    if (tv.text.toString() == "NOTIFY" || tv.text.toString() == "INDICATE") {
+                        childViewHolder.ibGraph!!.visibility = View.VISIBLE
+                    }
+                    tv.tag = Pair(groupPos, childPos)
 
-                    tv.setOnTouchListener(View.OnTouchListener({view, motionEvent ->
+                    tv.setOnTouchListener(View.OnTouchListener({ view, motionEvent ->
 
-                        if(motionEvent.action == MotionEvent.ACTION_DOWN){
+                        if (motionEvent.action == MotionEvent.ACTION_DOWN) {
                             val property = (view as TextView).text.toString()
                             //onChildClick  depending on the property
-                            listener.onChildClick(tv,(view.tag as Pair<Int,Int>).first,(view.tag as Pair<Int,Int>).second,null,property)
+                            listener.onChildClick(tv, (view.tag as Pair<Int, Int>).first, (view.tag as Pair<Int, Int>).second, null, property)
 
                         }
                         true
@@ -549,7 +560,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
 
 
                 //store view in HashMap
-                childViews.put(Pair(groupPos,childPos),v)
+                childViews.put(Pair(groupPos, childPos), v)
                 return v
             }
 
@@ -560,18 +571,28 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
             return true
         }
 
-        fun updateCharateristicValue(groupPos: Int,childPos: Int,data: ByteArray){
-            val packetConverter=packetConverters.get(Pair(groupPos,childPos))
-            if(packetConverter!=null){
-               packetConverter.packet=data
-                val convertedData=packetConverter.getValue()
-                this.getChild(groupPos,childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
-                this.getChild(groupPos,childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).text = convertedData
+        fun updateCharateristicValue(groupPos: Int, childPos: Int, data: ByteArray) {
+            val packetConverter = packetConverters.get(Pair(groupPos, childPos))
+            if (packetConverter != null) {
+                packetConverter.packet = data
+                val convertedData = packetConverter.getValueAsString()
+                this.getChild(groupPos, childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
+                this.getChild(groupPos, childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).text = convertedData
 
-            }else{
-                this.getChild(groupPos,childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
-                this.getChild(groupPos,childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).text = (String(data!!)+"\n"+BleUtils.byteArrayToHex(data))
+            } else {
+                this.getChild(groupPos, childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).visibility = View.VISIBLE
+                this.getChild(groupPos, childPos)!!.findViewById<TextView>(R.id.tv_characteristic_value).text =  BleUtils.byteArrayToHex(data)
             }
+        }
+
+        fun getCharateristicValueAsDouble(groupPos: Int, childPos: Int, data: ByteArray):Double? {
+            val packetConverter = packetConverters.get(Pair(groupPos, childPos))
+            if (packetConverter != null) {
+                packetConverter.packet = data
+                val convertedData = packetConverter.getValueAsDouble()
+                return convertedData
+            }
+            return null
         }
     }
 

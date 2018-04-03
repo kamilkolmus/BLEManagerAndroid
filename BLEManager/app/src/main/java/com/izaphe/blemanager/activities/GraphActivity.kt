@@ -32,13 +32,17 @@ import com.izaphe.ble.utils.BlePackedConverter.interpretAsInteger
 import com.izaphe.ble.utils.BlePackedConverter.interpretAsString
 
 import com.izaphe.blemanager.ble.BleChrateristicInfo
-import com.izaphe.blemanager.ble.MultiDeviceCharCollectionObserver
-import com.izaphe.blemanager.ble.MultiDeviceCharCollectionObserver.multiDeviceCharCollection
+import com.izaphe.blemanager.ble.MultiDeviceCharCollection
+import com.izaphe.blemanager.ble.MultiDeviceCharCollection.multiDeviceCharCollection
+import com.izaphe.blemanager.ble.MultiDeviceCharCollection.setInterface
 import com.izaphe.blemanager.dialogs.DialogCharacteristicSettings
 import com.izaphe.blemanager.dialogs.DialogGraphSettings
+import com.izaphe.blemanager.dialogs.DialogStandardCharateristicsSettings
 import com.izaphe.blemanager.myinterfaces.DialogCharateristicSettingsInterface
 import com.izaphe.blemanager.myinterfaces.DialogGraphSettingsInterface
 import com.izaphe.blemanager.myinterfaces.MultiDeviceCharCollectionInterface
+import java.lang.ClassCastException
+import java.sql.Time
 
 
 import java.text.DecimalFormat
@@ -48,7 +52,7 @@ import java.util.*
 /**
  * Created by Kamil on 2018-03-17.
  */
-class GraphActivity : AppCompatActivity(), OnItemClickListener{
+class GraphActivity : AppCompatActivity(), OnItemClickListener {
 
 
     val context: Context = this
@@ -57,6 +61,11 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener{
     private var redrawer: Redrawer? = null
     private var historySize = 100
 
+    fun getRandomColor(): Int {
+        val rnd = Random()
+        rnd.setSeed(System.currentTimeMillis())
+        return Color.rgb(rnd.nextInt(255), rnd.nextInt(255), rnd.nextInt(255))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,18 +86,16 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener{
             dialog.show()
         })
 
-        MultiDeviceCharCollectionObserver.setInterface(object : MultiDeviceCharCollectionInterface {
+        setInterface(object : MultiDeviceCharCollectionInterface {
 
             override fun add(key: Pair<Int, Pair<Int, Int>>, info: BleChrateristicInfo) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     series.put(key, SimpleXYSeries(info.characteristicName))
-                    val series1Format = LineAndPointFormatter()
+
                     series.get(key)!!.useImplicitXVals()
+                    val pointLabelFormatter=PointLabelFormatter()
 
-                    series1Format.configure(context,
-                            R.xml.led1_time)
-
-                    plot!!.addSeries(series.get(key), series1Format)
+                    plot!!.addSeries(series.get(key),  LineAndPointFormatter(getRandomColor(),0,0,PointLabelFormatter(Color.TRANSPARENT)))
                     listview_selected_char.adapter = MyAdapter()
                 }
             }
@@ -112,19 +119,41 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener{
 
     override fun onItemClick(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
         println(multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.characteristicName)
-        var dialog = DialogCharacteristicSettings(this, object : DialogCharateristicSettingsInterface {
-            override fun onSaveClick(data: String) {
-                try {
-                    multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation = data
-                    println(multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation)
-                    listview_selected_char.adapter = MyAdapter()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
 
-            }
-        }, multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation)
-        dialog.show()
+        val isStandardCharacteristic=multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.standardCharacteristic
+
+        if(isStandardCharacteristic){
+            var dialog = DialogStandardCharateristicsSettings(this, object : DialogCharateristicSettingsInterface {
+                override fun onSaveClick(data: String) {
+                    try {
+                        multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation = data
+                        println(multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation)
+                        listview_selected_char.adapter = MyAdapter()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+
+                }
+            }, multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation)
+            dialog.show()
+
+        }else{
+            var dialog = DialogCharacteristicSettings(this, object : DialogCharateristicSettingsInterface {
+                override fun onSaveClick(data: String) {
+                    try {
+                        multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation = data
+                        println(multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation)
+                        listview_selected_char.adapter = MyAdapter()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+
+                }
+            }, multiDeviceCharCollection.get((listview_selected_char.adapter as MyAdapter).kays[position])!!.dataRoleInterpratation)
+            dialog.show()
+        }
+
+
     }
 
 
@@ -146,11 +175,10 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener{
         multiDeviceCharCollection.forEach { key, value ->
 
             series.put(Pair(key.first, Pair(key.second.first, key.second.second)), SimpleXYSeries(value.characteristicName))
-            val series1Format = LineAndPointFormatter()
-            series1Format.configure(this,
-                    R.xml.led1_time)
             series.get(Pair(key.first, Pair(key.second.first, key.second.second)))!!.useImplicitXVals();
-            plot!!.addSeries(series.get(Pair(key.first, Pair(key.second.first, key.second.second))), series1Format)
+//            val pointLabelFormatter=PointLabelFormatter()
+//            pointLabelFormatter.
+            plot!!.addSeries(series.get(Pair(key.first, Pair(key.second.first, key.second.second))), LineAndPointFormatter(getRandomColor(),0,0,PointLabelFormatter(Color.TRANSPARENT)))
         }
         redrawer!!.start()
         listview_selected_char.adapter = MyAdapter()
@@ -178,16 +206,47 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener{
                 val deviceIndex = intent.getIntExtra(EXTRA_DEVICE_ID, 0)
                 val serviceindex = intent.getIntExtra(EXTRA_SERVICE_INDEX, 0)
                 val charateristicIndex = intent.getIntExtra(EXTRA_CHARACTERISTIC_INDEX, 0)
-                val data = intent.getByteArrayExtra(EXTRA_DATA)
-
-                val seria = series.get(key = Pair(deviceIndex, Pair(serviceindex, charateristicIndex)))
-                val chrateristicInfo = multiDeviceCharCollection.get(Pair(deviceIndex, Pair(serviceindex, charateristicIndex)))
-                if (chrateristicInfo != null) {
-                    var rule = chrateristicInfo!!.dataRoleInterpratation
-                    updateCharateristic(seria, deviceIndex, serviceindex, charateristicIndex, data, rule)
+                try {
+                    val data = intent.getByteArrayExtra(EXTRA_DATA)
+                    val seria = series.get(key = Pair(deviceIndex, Pair(serviceindex, charateristicIndex)))
+                    val chrateristicInfo = multiDeviceCharCollection.get(Pair(deviceIndex, Pair(serviceindex, charateristicIndex)))
+                    if (chrateristicInfo != null) {
+                        var rule = chrateristicInfo!!.dataRoleInterpratation
+                        updateCharateristic(seria, deviceIndex, serviceindex, charateristicIndex, data, rule)
+                    }
+                } catch (e: Exception) {
+                    val data = intent.getDoubleExtra(EXTRA_DATA, Double.POSITIVE_INFINITY)
+                    if(data==Double.POSITIVE_INFINITY){
+                        return
+                    }
+                    val seria = series.get(key = Pair(deviceIndex, Pair(serviceindex, charateristicIndex)))
+                    val chrateristicInfo = multiDeviceCharCollection.get(Pair(deviceIndex, Pair(serviceindex, charateristicIndex)))
+                    if (chrateristicInfo != null) {
+                        var rule = chrateristicInfo!!.dataRoleInterpratation
+                        updateCharateristicAsDouble(seria, deviceIndex, serviceindex, charateristicIndex, data,rule)
+                    }
                 }
 
+
             }
+        }
+    }
+
+    private fun updateCharateristicAsDouble(seria: SimpleXYSeries?, deviceIndex: Int, serviceindex: Int, charateristicIndex: Int, data: Double, rule: String) {
+
+        if (seria != null) {
+            if(rule!="NONE"){
+                seria.addLast(null, data)
+                while (seria.size() > historySize) {
+                    seria.removeFirst()
+                }
+
+            }else{
+                seria.clear()
+            }
+
+        } else {
+            println("series for:" + deviceIndex + " " + serviceindex + " " + charateristicIndex + " is null")
         }
     }
 
@@ -201,6 +260,7 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener{
                     while (seria.size() > historySize) {
                         seria.removeFirst()
                     }
+
                 }
             } else {
                 seria.clear()
@@ -213,14 +273,13 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener{
     private fun convertData(data: ByteArray, rule: String): DoubleArray? {
 
         when (rule) {
-            "NULL" -> return null
+            "NONE" -> return null
             "STRING" -> return interpretAsString(data)
             "INTEGER" -> return interpretAsInteger(data)
             "FLOAT" -> return interpretAsFloat(data)
             else -> return null
         }
     }
-
 
 
     inner class MyHolder {
@@ -248,8 +307,8 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener{
             myHolder.deviceName!!.text = multiDeviceCharCollection.get(kays.get(i))!!.deviceName
 
             myHolder.characteristicName!!.text = multiDeviceCharCollection.get(kays.get(i))!!.characteristicName
-            myHolder.characteristicUUID!!.text ="UUID: "+multiDeviceCharCollection.get(kays.get(i))!!.characteristicUIID
-            myHolder.interpretation!!.text = "Interpret binary data as: "+multiDeviceCharCollection.get(kays.get(i))!!.dataRoleInterpratation
+            myHolder.characteristicUUID!!.text = "UUID: " + multiDeviceCharCollection.get(kays.get(i))!!.characteristicUIID
+            myHolder.interpretation!!.text = "Interpret binary data as: " + multiDeviceCharCollection.get(kays.get(i))!!.dataRoleInterpratation
 
             return view
 
@@ -289,24 +348,28 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener{
         return intentFilter
     }
 
-    internal fun createPlotFormat() {
-        plot!!.setRangeBoundaries(0, 1200, BoundaryMode.AUTO)
+    private fun createPlotFormat() {
 
+
+        plot!!.setRangeBoundaries(0, BoundaryMode.AUTO, 10, BoundaryMode.AUTO)
 
         plot!!.setRangeStep(StepMode.SUBDIVIDE, 11.0)
-        plot!!.linesPerRangeLabel = 1
+     //  plot!!.linesPerRangeLabel = 1
 
         plot!!.domainTitle.pack()
         plot!!.rangeTitle.pack()
+
+
 
         plot!!.graph.getLineLabelStyle(
                 XYGraphWidget.Edge.BOTTOM).format = DecimalFormat("#")
         plot!!.graph.getLineLabelStyle(
                 XYGraphWidget.Edge.LEFT).format = DecimalFormat("0.#")
 
-        plot!!.domainStepMode = StepMode.INCREMENT_BY_VAL
         plot!!.setDomainBoundaries(0, historySize, BoundaryMode.FIXED)
         plot!!.setDomainStep(StepMode.SUBDIVIDE, 11.0)
+
+        plot!!.calculateMinMaxVals()
 
         val paint = Paint()
         paint.strokeWidth = 2f

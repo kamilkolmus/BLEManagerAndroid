@@ -27,7 +27,7 @@ import android.widget.RelativeLayout.LayoutParams
 import com.i7xaphe.blemanager.R
 import com.izaphe.ble.charateristics.abstractcharateristic.AbstractBleCharacteristic
 
-import com.izaphe.ble.utils.BleCharacteristicInitializer
+
 import com.izaphe.ble.utils.BleUtils
 import com.izaphe.blemanager.activities.GraphActivity
 import com.izaphe.blemanager.activities.MainActivity
@@ -395,10 +395,11 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
         val mLeServices = mLeServices
         // list of ArrayList of available characteristic
         val mLeCharacteristic = mLeCharacteristic
-        //charValue holds textViews which store the read values of the characteristic.
+        //childViews holds views which store the values of the characteristic.
         //these values are modified externally by Fragment in mGattUpdateReceiver
         private val childViews: HashMap<Pair<Int, Int>, View> = HashMap()
-        private val packetConverters: HashMap<Pair<Int, Int>, AbstractBleCharacteristic?> = HashMap()
+        //characteristicConverters store objects for converting supported standard  bla characteristics
+        private val characteristicConverters: HashMap<Pair<Int, Int>, AbstractBleCharacteristic?> = HashMap()
         private val groupViews: HashMap<Int, View> = HashMap()
 
 
@@ -528,9 +529,9 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
 
                 childViewHolder.propertiesLinearlayout = v.findViewById(R.id.ll_properties)
 
-                val packetConverter: AbstractBleCharacteristic? = BleCharacteristicInitializer.getCharacteristicObject(mLeCharacteristic.get(groupPos).get(childPos).uuid.toString())
+                val packetConverter: AbstractBleCharacteristic? = BleUtils.getCharacteristicObject(mLeCharacteristic.get(groupPos).get(childPos).uuid.toString())
 
-                packetConverters.put(Pair(groupPos, childPos), packetConverter)
+                characteristicConverters.put(Pair(groupPos, childPos), packetConverter)
 
 
                 //dynamically added clickable textViews that correspond to the properties of characteristic
@@ -572,7 +573,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
         }
 
         fun updateCharateristicValue(groupPos: Int, childPos: Int, data: ByteArray) {
-            val packetConverter = packetConverters.get(Pair(groupPos, childPos))
+            val packetConverter = characteristicConverters.get(Pair(groupPos, childPos))
             if (packetConverter != null) {
                 packetConverter.packet = data
                 val convertedData = packetConverter.getValueAsString()
@@ -586,7 +587,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
         }
 
         fun getCharateristicValueAsDouble(groupPos: Int, childPos: Int, data: ByteArray):Double? {
-            val packetConverter = packetConverters.get(Pair(groupPos, childPos))
+            val packetConverter = characteristicConverters.get(Pair(groupPos, childPos))
             if (packetConverter != null) {
                 packetConverter.packet = data
                 val convertedData = packetConverter.getValueAsDouble()

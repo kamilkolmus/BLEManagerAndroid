@@ -1,6 +1,6 @@
 package com.izaphe.ble.charateristics
 
-import com.izaphe.ble.utils.BleCharacteristicInitializer
+import com.izaphe.ble.utils.BleUtils
 import org.junit.Test
 
 import org.junit.Assert.*
@@ -9,7 +9,7 @@ class DateTimeTest {
 
     @Test
     fun getValue() {
-        val charateristic= BleCharacteristicInitializer.getCharacteristicObject("00002a08-0000-1000-8000-00805f9b34fb")
+        val charateristic= BleUtils.getCharacteristicObject("00002a08-0000-1000-8000-00805f9b34fb")
         assertNotNull(charateristic)
 
         charateristic!!.packet=byteArrayOf(226.toByte(),7.toByte(),1.toByte(),1.toByte(),1.toByte(),1.toByte(),1.toByte())

@@ -59,7 +59,7 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener {
     var counter = 0
     private val series: HashMap<Pair<Int, Pair<Int, Int>>, SimpleXYSeries> = HashMap()
     private var redrawer: Redrawer? = null
-    private var historySize = 100
+    private var historySize = 300
 
     fun getRandomColor(): Int {
         val rnd = Random()

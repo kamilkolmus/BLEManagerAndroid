@@ -98,7 +98,7 @@ class FragmentBleServices : Fragment(), MyOnChildClickListener {
                             }
                         }
 
-                    } catch (e: NullPointerException) {
+                    } catch (e: Exception ) {
                         e.printStackTrace()
                     } finally {
                         updateToolbarAction(R.string.connect)

@@ -62,12 +62,12 @@ class FragmentBleDevices : ListFragment() {
          //stop scanning devices
         scanLeDevice(false)
          val device = mLeDeviceListAdapter!!.getDevice(position)
-         if(device==null){
-             Toast.makeText(context,"Enable to connect to device",Toast.LENGTH_SHORT)
+         if(device==null||device.name==null){
+             Toast.makeText(context,"Can not connect to the selected device",Toast.LENGTH_SHORT).show()
             return
          }
          //calling a function in MainActivity to add a new fragmentBleService to pagerView
-        (activity as MainActivity).addNewTab(device!!.name,device!!.address)
+        (activity as MainActivity).addNewTab(device.name,device.address)
       //   mLeDeviceListAdapter!!.removeDevice(position)
          mLeDeviceListAdapter!!.notifyDataSetChanged()
 

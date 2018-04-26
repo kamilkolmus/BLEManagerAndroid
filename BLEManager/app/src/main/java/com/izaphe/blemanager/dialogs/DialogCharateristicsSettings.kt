@@ -81,6 +81,7 @@ class DialogCharacteristicSettings(context: Context?, dialogCharacteristicSettin
             rb_float.text.toString()->{ info.text="The four consecutive bytes in the packet (in little endian) will be interpreted as float"  }
         }
     }
-    //
+    ////
+    
 
 }

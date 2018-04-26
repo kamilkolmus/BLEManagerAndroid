@@ -54,6 +54,7 @@
     <string name="pref_graph_boundary_low_label">Lower Boundary</string>
     <string name="pref_graph_boundary_false">Off</string>
     <string name="pref_graph_boundary_true">On</string>
+    <string name="graph_settings">Graph Settings</string>
 
 
 </resources>

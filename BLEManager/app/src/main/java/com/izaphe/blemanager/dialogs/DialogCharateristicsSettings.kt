@@ -40,7 +40,6 @@ class DialogCharacteristicSettings(context: Context?, dialogCharacteristicSettin
                     function=rb_float.text.toString()
                     setInfo(function)
                 }
-
             }
         })
         when(function){

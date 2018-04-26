@@ -19,8 +19,6 @@ object Utils {
                 LinearLayout.LayoutParams.WRAP_CONTENT)
         lparams.setMargins(12,0,10,0)
 
-
-
         if (BluetoothGattCharacteristic.PROPERTY_BROADCAST and properties != 0) {
 
             list.add(TouchableTextView(context))
@@ -67,8 +65,6 @@ object Utils {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 list.last().focusable= View.FOCUSABLE
             }
-
-
         }
         if (BluetoothGattCharacteristic.PROPERTY_NOTIFY and properties != 0) {
 

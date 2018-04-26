@@ -20,16 +20,14 @@ class GraphSettings : PreferenceFragmentCompat(), SharedPreferences.OnSharedPref
         for (i in 0 until count) {
             val p = prefScreen.getPreference(i)
             p.onPreferenceChangeListener = this
-            // You don't need to set up preference summaries for checkbox preferences because
-            // they are already set up in xml using summaryOff and summary On
+
             if (p !is CheckBoxPreference) {
                 val value = sharedPreferences.getString(p.key, "")
                 setPreferenceSummary(p, value)
             }
         }
-
-
     }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -5,11 +5,10 @@ import android.app.Dialog
 import android.content.Context
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.util.DisplayMetrics
 import android.view.InflateException
 import android.view.Window
 import com.i7xaphe.blemanager.R
-
-
 
 class DialogGraphSettings(context: Context?,activity: AppCompatActivity) : Dialog(context) {
 
@@ -20,13 +19,19 @@ class DialogGraphSettings(context: Context?,activity: AppCompatActivity) : Dialo
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestWindowFeature(Window.FEATURE_NO_TITLE)
-       // setTitle("Settings")
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         try {
             setContentView(R.layout.dialog_graph_settings_fragment)
+
+            val displayMetrics = DisplayMetrics()
+            window!!.windowManager.defaultDisplay.getMetrics(displayMetrics)
+            val width = displayMetrics.widthPixels
+            val height = displayMetrics.heightPixels
+            window!!.setLayout((width * 0.9).toInt(), (height * 0.8).toInt())
+
         }catch (e: InflateException){
             e.printStackTrace()
             cancel()

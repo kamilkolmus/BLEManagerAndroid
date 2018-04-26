@@ -24,4 +24,5 @@
         android:key="@string/pref_graph_boundary_low_key"
         android:title="@string/pref_graph_boundary_low_label"
        />
+
 </PreferenceScreen>

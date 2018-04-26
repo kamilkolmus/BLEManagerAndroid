@@ -1,11 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<fragment xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/fragment_graph_settings"
-    android:name="com.izaphe.blemanager.settings.GraphSettings"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-</fragment>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_height="match_parent" android:layout_width="match_parent"
+    android:orientation="vertical"
+    >
+
+    <TextView
+        android:paddingLeft="24dp"
+        android:paddingBottom="10dp"
+        android:paddingTop="10dp"
+        android:textColor="@color/ap_black"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/graph_settings"
+        android:textSize="24sp"
+        />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"/>
+
+
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/fragment_graph_settings"
+        android:name="com.izaphe.blemanager.settings.GraphSettings"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </fragment>
+
+</LinearLayout>
+
+
 
 
 

@@ -1,10 +1,8 @@
 package com.izaphe.blemanager.activities
 
 import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
+import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Bundle
@@ -12,6 +10,7 @@ import android.support.v7.app.AppCompatActivity
 import kotlinx.android.synthetic.main.content_graph.*
 import android.os.Build
 import android.support.annotation.RequiresApi
+import android.support.v7.preference.PreferenceManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -52,14 +51,15 @@ import java.util.*
 /**
  * Created by Kamil on 2018-03-17.
  */
-class GraphActivity : AppCompatActivity(), OnItemClickListener {
+class GraphActivity : AppCompatActivity(), OnItemClickListener, SharedPreferences.OnSharedPreferenceChangeListener  {
+
 
 
     val context: Context = this
     var counter = 0
     private val series: HashMap<Pair<Int, Pair<Int, Int>>, SimpleXYSeries> = HashMap()
     private var redrawer: Redrawer? = null
-    private var historySize = 300
+    private var historySize:Int = 0
 
     fun getRandomColor(): Int {
         val rnd = Random()
@@ -75,15 +75,8 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener {
 
         listview_selected_char.onItemClickListener = this
 
-
         plot.setOnClickListener({
-            var dialog = DialogGraphSettings(this, object : DialogGraphSettingsInterface {
-                override fun historySize(historySize: Int) {
-                    plot!!.setDomainBoundaries(0, historySize, BoundaryMode.FIXED)
-                    this@GraphActivity.historySize = historySize
-                }
-            }, historySize)
-            dialog.show()
+            DialogGraphSettings(this, this).show()
         })
 
         setInterface(object : MultiDeviceCharCollectionInterface {
@@ -93,8 +86,6 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener {
                     series.put(key, SimpleXYSeries(info.characteristicName))
 
                     series.get(key)!!.useImplicitXVals()
-                    val pointLabelFormatter=PointLabelFormatter()
-
                     plot!!.addSeries(series.get(key),  LineAndPointFormatter(getRandomColor(),0,0,PointLabelFormatter(Color.TRANSPARENT)))
                     listview_selected_char.adapter = MyAdapter()
                 }
@@ -112,9 +103,28 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             notifyCharacteristicChange()
         }
-
+        setupSharedPreferences()
 
     }
+
+    private fun setupSharedPreferences() {
+        // Get all of the values from shared preferences to set it up
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        historySize = Integer.parseInt(sharedPreferences!!.getString(getString(R.string.pref_graph_history_key),getString(R.string.pre_graph_history_default)))
+        plot!!.setDomainBoundaries(0,historySize , BoundaryMode.FIXED)
+        val autoBoundary =sharedPreferences!!.getBoolean(getString(R.string.pref_graph_boundary_key),getResources().getBoolean(R.bool.pref_graph_boundary_default))
+        val highBoundary = Integer.parseInt(sharedPreferences!!.getString(getString(R.string.pref_graph_boundary_high_key),getString(R.string.pref_graph_boundary_high_default)))
+        val lowerBoundary = Integer.parseInt(sharedPreferences!!.getString(getString(R.string.pref_graph_boundary_low_key),getString(R.string.pre_graph_boundary_low_default)))
+        if(autoBoundary){
+            plot!!.setRangeBoundaries(lowerBoundary, BoundaryMode.AUTO, highBoundary, BoundaryMode.AUTO)
+        }else{
+            plot!!.setRangeBoundaries(lowerBoundary, BoundaryMode.FIXED, highBoundary, BoundaryMode.FIXED)
+        }
+        // Register the listener
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this)
+    }
+
+
 
 
     override fun onItemClick(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
@@ -194,6 +204,8 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener {
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(broadcastReceiver)
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .unregisterOnSharedPreferenceChangeListener(this)
     }
 
     private val broadcastReceiver = object : BroadcastReceiver() {
@@ -439,5 +451,36 @@ class GraphActivity : AppCompatActivity(), OnItemClickListener {
         //        plot.getGraph().getLineLabelStyle(
         //                XYGraphWidget.Edge.LEFT).setPaint(paint);
 
+    }
+
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        if (key == getString(R.string.pref_graph_history_key)) {
+            val historySize = Integer.parseInt(sharedPreferences!!.getString(key,getString(R.string.pre_graph_history_default)))
+            plot!!.setDomainBoundaries(0,historySize , BoundaryMode.FIXED)
+            this@GraphActivity.historySize = historySize
+        }
+        else if (key == getString(R.string.pref_graph_boundary_key)) {
+            val autoBoundary =sharedPreferences!!.getBoolean(key,getResources().getBoolean(R.bool.pref_graph_boundary_default))
+            val highBoundary = Integer.parseInt(sharedPreferences!!.getString(getString(R.string.pref_graph_boundary_high_key),getString(R.string.pref_graph_boundary_high_default)))
+            val lowerBoundary = Integer.parseInt(sharedPreferences!!.getString(getString(R.string.pref_graph_boundary_low_key),getString(R.string.pre_graph_boundary_low_default)))
+            if(autoBoundary){
+                plot!!.setRangeBoundaries(lowerBoundary, BoundaryMode.AUTO, highBoundary, BoundaryMode.AUTO)
+            }else{
+                plot!!.setRangeBoundaries(lowerBoundary, BoundaryMode.FIXED, highBoundary, BoundaryMode.FIXED)
+            }
+        }
+        else if (key == getString(R.string.pref_graph_boundary_high_key)) {
+            val highBoundary = Integer.parseInt(sharedPreferences!!.getString(key,getString(R.string.pref_graph_boundary_high_default)))
+            if(!sharedPreferences!!.getBoolean(getString(R.string.pref_graph_boundary_key),getResources().getBoolean(R.bool.pref_graph_boundary_default))){
+                plot!!.setRangeUpperBoundary(highBoundary,BoundaryMode.FIXED)
+            }
+        }
+        else if (key == getString(R.string.pref_graph_boundary_low_key)) {
+            val lowerBoundary = Integer.parseInt(sharedPreferences!!.getString(key,getString(R.string.pre_graph_boundary_low_default)))
+            if(!sharedPreferences!!.getBoolean(getString(R.string.pref_graph_boundary_key),getResources().getBoolean(R.bool.pref_graph_boundary_default))){
+                plot!!.setRangeLowerBoundary(lowerBoundary,BoundaryMode.FIXED)
+            }
+
+        }
     }
 }

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:defaultValue="@string/pre_graph_history_default"
+        android:key="@string/pref_graph_history_key"
+        android:title="@string/pref_graph_history_label" />
+
+    <CheckBoxPreference
+        android:key="@string/pref_graph_boundary_key"
+        android:title="@string/pref_graph_boundary_label"
+        android:defaultValue="true"
+        android:summaryOff="@string/pref_graph_boundary_false"
+        android:summaryOn="@string/pref_graph_boundary_true"
+        />
+    <EditTextPreference
+       android:defaultValue="@string/pref_graph_boundary_high_default"
+       android:key="@string/pref_graph_boundary_high_key"
+        android:title="@string/pref_graph_boundary_high_label"
+        />
+    <EditTextPreference
+        android:defaultValue="@string/pre_graph_boundary_low_default"
+        android:key="@string/pref_graph_boundary_low_key"
+        android:title="@string/pref_graph_boundary_low_label"
+       />
+</PreferenceScreen>

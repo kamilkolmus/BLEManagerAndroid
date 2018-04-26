@@ -24,7 +24,6 @@
 
     <string name="rssi">RSSI: </string>
 
-    <!-- Menu items -->
     <string name="menu_connect">Connect</string>
     <string name="menu_disconnect">Disconnect</string>
     <string name="menu_scan">Scan</string>
@@ -41,6 +40,20 @@
     <string name="connectiong">CONNECTING</string>
     <string name="disconnecting">DISCONNECTING</string>
     <string name="connecting">CONNECTING</string>
+
+    <string name="pref_graph_history_key" translatable="false">pref_graph_history_key</string>
+    <string name="pref_graph_history_label">History Size</string>
+    <string name="pre_graph_history_default">300</string>
+    <string name="pref_graph_boundary_key" translatable="false">pref_graph_boundary_key</string>
+    <string name="pref_graph_boundary_label">Auto Boundary</string>
+    <string name="pref_graph_boundary_high_default">10</string>
+    <string name="pref_graph_boundary_high_key" translatable="false">pref_graph_boundary_high_key</string>
+    <string name="pref_graph_boundary_high_label">Upper Boundary</string>
+    <string name="pre_graph_boundary_low_default">0</string>
+    <string name="pref_graph_boundary_low_key" translatable="false">pref_graph_boundary_low_key</string>
+    <string name="pref_graph_boundary_low_label">Lower Boundary</string>
+    <string name="pref_graph_boundary_false">Off</string>
+    <string name="pref_graph_boundary_true">On</string>
 
 
 </resources>

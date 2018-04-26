@@ -20,7 +20,7 @@ class DialogStandardCharateristicsSettings(context: Context?, dialogCharacterist
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
         setContentView(R.layout.dialog_standard_charateristic_settings)
 
         radio_group1.setOnCheckedChangeListener({ radioGroup: RadioGroup, id: Int ->
